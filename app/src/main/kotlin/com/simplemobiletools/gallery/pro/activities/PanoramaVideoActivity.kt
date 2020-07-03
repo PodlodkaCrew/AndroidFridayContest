@@ -280,7 +280,7 @@ open class PanoramaVideoActivity : SimpleActivity(), SeekBar.OnSeekBarChangeList
         if (mIsFullscreen) {
             hideSystemUI(false)
         } else {
-            showSystemUI(false)
+            showSystеmUI(false)
         }
     }
 

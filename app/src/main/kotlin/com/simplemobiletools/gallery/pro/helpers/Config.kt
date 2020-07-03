@@ -2,7 +2,10 @@ package com.simplemobiletools.gallery.pro.helpers
 
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Environment
+import android.view.View
+import android.widget.RemoteViews
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.simplemobiletools.commons.helpers.BaseConfig
@@ -493,3 +496,5 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(WERE_FAVORITES_MIGRATED, false)
         set(wereFavoritesMigrated) = prefs.edit().putBoolean(WERE_FAVORITES_MIGRATED, wereFavoritesMigrated).apply()
 }
+
+

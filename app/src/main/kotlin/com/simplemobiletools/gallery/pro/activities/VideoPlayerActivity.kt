@@ -144,7 +144,7 @@ open class VideoPlayerActivity : SimpleActivity(), SeekBar.OnSeekBarChangeListen
         supportActionBar?.title = getFilenameFromUri(mUri!!)
         initTimeHolder()
 
-        showSystemUI(true)
+        showSystеmUI(true)
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
             val isFullscreen = visibility and View.SYSTEM_UI_FLAG_FULLSCREEN != 0
             fullscreenToggled(isFullscreen)
@@ -439,7 +439,7 @@ open class VideoPlayerActivity : SimpleActivity(), SeekBar.OnSeekBarChangeListen
         if (isFullScreen) {
             hideSystemUI(true)
         } else {
-            showSystemUI(true)
+            showSystеmUI(true)
         }
 
         val newAlpha = if (isFullScreen) 0f else 1f

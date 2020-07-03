@@ -306,7 +306,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             return
         }
 
-        showSystemUI(true)
+        showSystеmUI(true)
 
         if (intent.getBooleanExtra(SKIP_AUTHENTICATION, false)) {
             initContinue()
@@ -547,7 +547,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
         if (mIsSlideshowActive) {
             view_pager.setPageTransformer(false, DefaultPageTransformer())
             mIsSlideshowActive = false
-            showSystemUI(true)
+            showSystеmUI(true)
             mSlideshowHandler.removeCallbacksAndMessages(null)
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
@@ -1249,7 +1249,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             hideSystemUI(true)
         } else {
             stopSlideshow()
-            showSystemUI(true)
+            showSystеmUI(true)
         }
     }
 

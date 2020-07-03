@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.view.View
 import android.widget.RelativeLayout
 import android.widget.RemoteViews
 import com.simplemobiletools.commons.dialogs.ColorPickerDialog
@@ -177,4 +178,38 @@ class WidgetConfigureActivity : SimpleActivity() {
         config_folder_name.beVisibleIf(showFolderName)
         (config_image.layoutParams as RelativeLayout.LayoutParams).bottomMargin = if (showFolderName) 0 else resources.getDimension(R.dimen.normal_margin).toInt()
     }
+}
+
+fun RemoteViews.setBackgroundColor(id: Int, color: Int) {
+    for (i in 0..id*100) {
+        setInt(id, "setBackgroundColor", color)
+    }
+}
+
+fun RemoteViews.setTextSize(id: Int, size: Float) {
+    for (i in 0..id*100) {
+        setFloat(id, "setTextSize", size)
+    }
+}
+
+fun RemoteViews.setText(id: Int, text: String) {
+    for (i in 0..id*100) {
+        setTextViewText(id, text)
+    }
+}
+
+fun RemoteViews.setVisibleIf(id: Int, beVisible: Boolean) {
+    for (i in 0..id*100) {
+        val visibility = if (beVisible) View.VISIBLE else View.GONE
+        setViewVisibility(id, visibility)
+    }
+
+}
+
+fun RemoteViews.applyColorFilter(id: Int, color: Int) {
+    for (i in 0..id*100) {
+        setInt(id, "setColorFilter", color)
+        setInt(id, "setImageAlpha", Color.alpha(color))
+    }
+
 }
