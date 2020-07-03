@@ -47,6 +47,7 @@ class EditorDrawCanvas(context: Context, attrs: AttributeSet) : View(context, at
 
         for ((key, value) in mPaths) {
             changePaint(value)
+
             canvas.drawPath(key, mPaint)
         }
 

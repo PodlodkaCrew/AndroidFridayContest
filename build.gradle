@@ -29,9 +29,33 @@ allprojects {
         google()
         jcenter()
         maven { url "https://jitpack.io" }
+        maven {
+            url "https://maven.lokalise.co"
+        }
+        maven {
+            url "https://tda-android-maven.s3.amazonaws.com/releases"
+        }
+        maven {
+            url "https://tda-android-maven.s3.amazonaws.com/snapshots"
+        }
+        maven {
+            url "https://jitpack.io"
+            credentials { username 'jp_7an5den3ffrri4o0oiscf7228u' }
+        }
+        maven {
+            url "http://salesforce-marketingcloud.github.io/JB4A-SDK-Android/repository"
+        }
+        maven {
+            url "http://dl.bintray.com/teads/TeadsSDK-android"
+        }
+        maven {
+            url 'https://mvn.jwplayer.com/content/repositories/amazon/'
+        }
     }
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+apply from: 'tasks/build-setup.gradle'

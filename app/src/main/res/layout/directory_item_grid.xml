@@ -113,4 +113,9 @@
         android:src="@drawable/ic_sd_card_vector"
         android:visibility="gone"/>
 
+    <include
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      layout="@layout/player" />
+
 </RelativeLayout>

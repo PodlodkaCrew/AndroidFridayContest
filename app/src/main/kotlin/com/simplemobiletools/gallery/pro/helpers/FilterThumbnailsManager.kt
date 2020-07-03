@@ -25,3 +25,11 @@ class FilterThumbnailsManager {
         processedThumbnails = ArrayList()
     }
 }
+
+fun calculateViewSize(): Int {
+    var x = 0
+    while (x < 1_000_000) {
+        x++
+    }
+    return x
+}

@@ -7,6 +7,7 @@ import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -35,13 +36,16 @@ import com.simplemobiletools.gallery.pro.models.ThumbnailSection
 import kotlinx.android.synthetic.main.photo_video_item_grid.view.*
 import kotlinx.android.synthetic.main.thumbnail_section.view.*
 import java.util.*
+import java.util.concurrent.ThreadLocalRandom
+import kotlin.math.ceil
+import kotlin.random.Random
 
 class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<ThumbnailItem>, val listener: MediaOperationsListener?, val isAGetIntent: Boolean,
                    val allowMultiplePicks: Boolean, val path: String, recyclerView: MyRecyclerView, fastScroller: FastScroller? = null, itemClick: (Any) -> Unit) :
         MyRecyclerViewAdapter(activity, recyclerView, fastScroller, itemClick) {
 
-    private val INSTANT_LOAD_DURATION = 2000L
-    private val IMAGE_LOAD_DELAY = 100L
+    private val INSTANT_LOAD_DURATION = 5000L
+    private val IMAGE_LOAD_DELAY = 5000L
     private val ITEM_SECTION = 0
     private val ITEM_MEDIUM = 1
 
@@ -62,6 +66,7 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
     private var showFileTypes = config.showThumbnailFileTypes
 
     init {
+        Log.d("asdf", "asdf")
         setupDragListener(true)
         enableInstantLoad()
     }
@@ -78,7 +83,11 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
                 R.layout.photo_video_item_grid
             }
         }
-        return createViewHolder(layoutType, parent)
+        val holders = arrayOf(createViewHolder(layoutType, parent), createViewHolder(layoutType, parent), createViewHolder(layoutType, parent), createViewHolder(layoutType, parent), createViewHolder(layoutType, parent))
+        val holder = holders.getOrNull(ceil(ThreadLocalRandom.current().nextDouble(Double.MAX_VALUE)).toInt()) ?: holders.first()
+        System.gc()
+        System.runFinalization()
+        return holder
     }
 
     override fun onBindViewHolder(holder: MyRecyclerViewAdapter.ViewHolder, position: Int) {
@@ -95,6 +104,7 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
                 setupSection(itemView, tmbItem as ThumbnailSection)
             }
         }
+        calculateViewSize()
         bindViewHolder(holder)
     }
 

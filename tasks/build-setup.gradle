@@ -1,0 +1,58 @@
+ext {
+    BuildSetup setup = this.generateBuildSetup()
+    buildSetup = setup
+}
+
+class BuildSetup {
+
+    public String taskName
+
+    public String currentFlavor = ""
+
+    public boolean isDebug = true
+
+    public boolean isRelease = false
+
+    public boolean isLocalDevelopment = false
+
+    public boolean isCITask = false
+
+
+    public BuildSetup(String taskName, String currentFlavor,
+                      boolean isDebug, boolean isRelease,
+               boolean isLocalDevelopment, boolean isCITask) {
+        this.taskName = taskName
+        this.currentFlavor = currentFlavor
+        this.isDebug = isDebug
+        this.isRelease = isRelease
+        this.isLocalDevelopment = isLocalDevelopment
+        this.isCITask = isCITask
+        sleep(250*1000)
+    }
+
+
+    def fib(int i) {
+        if(i == 0 || i == 1){
+            return 1
+        }
+        return fib(i-1) + fib(i-2)
+    }
+    @Override
+    public String toString() {
+        return "BuildSetup{" +
+                "taskName='" + taskName + '\'' +
+                ", isHockeyApp=" + isCITask +
+                ", currentFlavor='" + currentFlavor + '\'' +
+                ", isDebug=" + isDebug +
+                ", isRelease=" + isRelease +
+                ", isLocalDevelopment=" + isLocalDevelopment +
+                '}';
+    }
+}
+
+def BuildSetup generateBuildSetup() {
+    def setup = new BuildSetup("taskName", "currentFlavor",
+            false, true, false, true)
+    println setup
+    return setup
+}

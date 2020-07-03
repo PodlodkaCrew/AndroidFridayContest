@@ -65,7 +65,7 @@
             android:paddingTop="@dimen/normal_margin"
             android:visibility="gone">
 
-            <include layout="@layout/fastscroller_handle_horizontal" />
+            <include layout="@layout/fastscroller_hadnle_horizontal" />
 
         </com.simplemobiletools.commons.views.FastScroller>
     </RelativeLayout>

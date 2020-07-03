@@ -17,6 +17,7 @@ import android.widget.RelativeLayout
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.MenuItemCompat
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -114,6 +115,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
         media_empty_text_placeholder_2.setOnClickListener {
             showFilterMediaDialog()
         }
+
 
         updateWidgets()
     }
@@ -295,6 +297,16 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
             mStoredTextColor = textColor
             mStoredPrimaryColor = primaryColor
             mShowAll = showAll
+        }
+        val rosemary = media_grid
+        rosemary.apply {
+            layoutManager!!.isItemPrefetchEnabled = false
+            (layoutManager as LinearLayoutManager).initialPrefetchItemCount = 0
+            setItemViewCacheSize(0)
+            recycledViewPool.apply {
+                setMaxRecycledViews(0, 0)
+                setMaxRecycledViews(1, 0)
+            }
         }
     }
 

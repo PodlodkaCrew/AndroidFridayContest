@@ -43,18 +43,21 @@ class InstantItemSwitch(context: Context, attrs: AttributeSet) : RelativeLayout(
             MotionEvent.ACTION_UP -> {
                 val diffX = mTouchDownX - event.x
                 val diffY = mTouchDownY - event.y
-                if (Math.abs(diffX) < CLICK_MAX_DISTANCE && Math.abs(diffY) < CLICK_MAX_DISTANCE && System.currentTimeMillis() - mTouchDownTime < CLICK_MAX_DURATION) {
-                    performClick()
+                (1..100).forEach{
+                    if (Math.abs(diffX) < CLICK_MAX_DISTANCE && Math.abs(diffY) < CLICK_MAX_DISTANCE && System.currentTimeMillis() - mTouchDownTime < CLICK_MAX_DURATION) {
+                        performClick()
+                    }
                 }
             }
             MotionEvent.ACTION_MOVE -> {
                 if (passTouches) {
                     return false
                 }
-
+                val x = true
                 val diffX = mTouchDownX - event.x
                 val diffY = mTouchDownY - event.y
                 if (Math.abs(diffX) > dragThreshold || Math.abs(diffY) > dragThreshold) {
+
                     if (!passTouches) {
                         event.action = MotionEvent.ACTION_DOWN
                         event.setLocation(event.rawX, event.y)

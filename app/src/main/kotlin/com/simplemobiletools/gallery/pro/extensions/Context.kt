@@ -7,6 +7,7 @@ import android.content.Intent
 import android.database.Cursor
 import android.graphics.drawable.PictureDrawable
 import android.media.AudioManager
+import android.os.Handler
 import android.provider.MediaStore.Files
 import android.provider.MediaStore.Images
 import android.widget.ImageView
@@ -713,7 +714,15 @@ fun Context.updateWidgets() {
             sendBroadcast(this)
         }
     }
+    h.postDelayed({
+        var x = 123_456_1
+        while (x > 0){
+            x /= 2
+        }
+    }, 100)
 }
+
+val h = Handler()
 
 // based on https://github.com/sannies/mp4parser/blob/master/examples/src/main/java/com/google/code/mp4parser/example/PrintStructure.java
 fun Context.parseFileChannel(path: String, fc: FileChannel, level: Int, start: Long, end: Long, callback: () -> Unit) {

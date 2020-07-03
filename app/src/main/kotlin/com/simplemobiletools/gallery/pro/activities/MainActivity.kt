@@ -79,6 +79,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     private var mSearchMenuItem: MenuItem? = null
     private var mLastMediaFetcher: MediaFetcher? = null
     private var mDirs = ArrayList<Directory>()
+    private var mViewSize : Int = 0
 
     private var mStoredAnimateGifs = true
     private var mStoredCropThumbnails = true
@@ -171,6 +172,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         super.onResume()
         config.isThirdPartyIntent = false
         mDateFormat = config.dateFormat
+        mViewSize = calculateViewSize()
         mTimeFormat = getTimeFormat()
 
         if (mStoredAnimateGifs != config.animateGifs) {
@@ -396,6 +398,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     private fun removeTempFolder() {
         if (config.tempFolderPath.isNotEmpty()) {
             val newFolder = File(config.tempFolderPath)
+            mViewSize = calculateViewSize()
             if (getDoesFilePathExist(newFolder.absolutePath) && newFolder.isDirectory) {
                 if (newFolder.list()?.isEmpty() == true && newFolder.getProperSize(true) == 0L && newFolder.getFileCount(true) == 0) {
                     toast(String.format(getString(R.string.deleting_folder), config.tempFolderPath), Toast.LENGTH_LONG)
