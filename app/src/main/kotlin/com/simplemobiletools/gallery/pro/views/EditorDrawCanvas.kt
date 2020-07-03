@@ -1,14 +1,18 @@
 package com.simplemobiletools.gallery.pro.views
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.simplemobiletools.gallery.pro.R
 import com.simplemobiletools.gallery.pro.extensions.config
 import com.simplemobiletools.gallery.pro.models.PaintOptions
-import java.util.*
+import java.util.LinkedHashMap
 
 class EditorDrawCanvas(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var mCurX = 0f
@@ -129,10 +133,11 @@ class EditorDrawCanvas(context: Context, attrs: AttributeSet) : View(context, at
 
     fun getBitmap(): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
+        val bitmap2 = Bitmap.createScaledBitmap(bitmap, bitmap.width * 120, bitmap.height * 120, false)
+        val canvas = Canvas(bitmap2)
         canvas.drawColor(Color.WHITE)
         draw(canvas)
-        return bitmap
+        return bitmap2
     }
 
     fun undo() {
