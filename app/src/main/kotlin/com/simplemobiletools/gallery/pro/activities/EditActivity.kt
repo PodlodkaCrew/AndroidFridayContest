@@ -27,9 +27,35 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.simplemobiletools.commons.dialogs.ColorPickerDialog
 import com.simplemobiletools.commons.dialogs.ConfirmationDialog
-import com.simplemobiletools.commons.extensions.*
+import com.simplemobiletools.commons.extensions.applyColorFilter
+import com.simplemobiletools.commons.extensions.baseConfig
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beGoneIf
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.checkAppSideloading
+import com.simplemobiletools.commons.extensions.copyTo
+import com.simplemobiletools.commons.extensions.getAdjustedPrimaryColor
+import com.simplemobiletools.commons.extensions.getCompressionFormat
+import com.simplemobiletools.commons.extensions.getCurrentFormattedDateTime
+import com.simplemobiletools.commons.extensions.getFileOutputStream
+import com.simplemobiletools.commons.extensions.getFilenameExtension
+import com.simplemobiletools.commons.extensions.getFilenameFromContentUri
+import com.simplemobiletools.commons.extensions.getFilenameFromPath
+import com.simplemobiletools.commons.extensions.getParentPath
+import com.simplemobiletools.commons.extensions.getRealPathFromURI
+import com.simplemobiletools.commons.extensions.internalStoragePath
+import com.simplemobiletools.commons.extensions.isGone
+import com.simplemobiletools.commons.extensions.isPathOnOTG
+import com.simplemobiletools.commons.extensions.isVisible
+import com.simplemobiletools.commons.extensions.launchViewIntent
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.onSeekBarChangeListener
+import com.simplemobiletools.commons.extensions.rescanPaths
+import com.simplemobiletools.commons.extensions.sharePathIntent
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.toast
 import com.simplemobiletools.commons.helpers.REAL_FILE_PATH
-import com.simplemobiletools.commons.helpers.ensureBackgroundThread
 import com.simplemobiletools.commons.helpers.isNougatPlus
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.gallery.pro.BuildConfig
@@ -41,18 +67,47 @@ import com.simplemobiletools.gallery.pro.dialogs.SaveAsDialog
 import com.simplemobiletools.gallery.pro.extensions.config
 import com.simplemobiletools.gallery.pro.extensions.fixDateTaken
 import com.simplemobiletools.gallery.pro.extensions.openEditor
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.helpers.ASPECT_RATIO_FOUR_THREE
+import com.simplemobiletools.gallery.pro.helpers.ASPECT_RATIO_FREE
+import com.simplemobiletools.gallery.pro.helpers.ASPECT_RATIO_ONE_ONE
+import com.simplemobiletools.gallery.pro.helpers.ASPECT_RATIO_OTHER
+import com.simplemobiletools.gallery.pro.helpers.ASPECT_RATIO_SIXTEEN_NINE
+import com.simplemobiletools.gallery.pro.helpers.FilterThumbnailsManager
 import com.simplemobiletools.gallery.pro.models.FilterItem
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.zomato.photofilters.FilterPack
 import com.zomato.photofilters.imageprocessors.Filter
-import kotlinx.android.synthetic.main.activity_edit.*
-import kotlinx.android.synthetic.main.bottom_actions_aspect_ratio.*
-import kotlinx.android.synthetic.main.bottom_editor_actions_filter.*
-import kotlinx.android.synthetic.main.bottom_editor_crop_rotate_actions.*
-import kotlinx.android.synthetic.main.bottom_editor_draw_actions.*
-import kotlinx.android.synthetic.main.bottom_editor_primary_actions.*
-import java.io.*
+import kotlinx.android.synthetic.main.activity_edit.bottom_aspect_ratios
+import kotlinx.android.synthetic.main.activity_edit.bottom_editor_crop_rotate_actions
+import kotlinx.android.synthetic.main.activity_edit.bottom_editor_draw_actions
+import kotlinx.android.synthetic.main.activity_edit.bottom_editor_filter_actions
+import kotlinx.android.synthetic.main.activity_edit.bottom_editor_primary_actions
+import kotlinx.android.synthetic.main.activity_edit.crop_image_view
+import kotlinx.android.synthetic.main.activity_edit.default_image_view
+import kotlinx.android.synthetic.main.activity_edit.editor_draw_canvas
+import kotlinx.android.synthetic.main.bottom_actions_aspect_ratio.bottom_aspect_ratio_four_three
+import kotlinx.android.synthetic.main.bottom_actions_aspect_ratio.bottom_aspect_ratio_free
+import kotlinx.android.synthetic.main.bottom_actions_aspect_ratio.bottom_aspect_ratio_one_one
+import kotlinx.android.synthetic.main.bottom_actions_aspect_ratio.bottom_aspect_ratio_other
+import kotlinx.android.synthetic.main.bottom_actions_aspect_ratio.bottom_aspect_ratio_sixteen_nine
+import kotlinx.android.synthetic.main.bottom_editor_actions_filter.bottom_actions_filter_list
+import kotlinx.android.synthetic.main.bottom_editor_crop_rotate_actions.bottom_aspect_ratio
+import kotlinx.android.synthetic.main.bottom_editor_crop_rotate_actions.bottom_flip_horizontally
+import kotlinx.android.synthetic.main.bottom_editor_crop_rotate_actions.bottom_flip_vertically
+import kotlinx.android.synthetic.main.bottom_editor_crop_rotate_actions.bottom_resize
+import kotlinx.android.synthetic.main.bottom_editor_crop_rotate_actions.bottom_rotate
+import kotlinx.android.synthetic.main.bottom_editor_draw_actions.bottom_draw_color
+import kotlinx.android.synthetic.main.bottom_editor_draw_actions.bottom_draw_color_clickable
+import kotlinx.android.synthetic.main.bottom_editor_draw_actions.bottom_draw_undo
+import kotlinx.android.synthetic.main.bottom_editor_draw_actions.bottom_draw_width
+import kotlinx.android.synthetic.main.bottom_editor_primary_actions.bottom_primary_crop_rotate
+import kotlinx.android.synthetic.main.bottom_editor_primary_actions.bottom_primary_draw
+import kotlinx.android.synthetic.main.bottom_editor_primary_actions.bottom_primary_filter
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 
 class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener {
     companion object {
@@ -168,7 +223,10 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
         isCropIntent = intent.extras?.get(CROP) == "true"
         if (isCropIntent) {
             bottom_editor_primary_actions.beGone()
-            (bottom_editor_crop_rotate_actions.layoutParams as RelativeLayout.LayoutParams).addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1)
+            (bottom_editor_crop_rotate_actions.layoutParams as RelativeLayout.LayoutParams).addRule(
+                RelativeLayout.ALIGN_PARENT_BOTTOM,
+                1
+            )
         }
 
         loadDefaultImageView()
@@ -196,47 +254,58 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
         editor_draw_canvas.beGone()
 
         val options = RequestOptions()
-                .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
 
         Glide.with(this)
-                .asBitmap()
-                .load(uri)
-                .apply(options)
-                .listener(object : RequestListener<Bitmap> {
-                    override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Bitmap>?, isFirstResource: Boolean): Boolean {
-                        if (uri != originalUri) {
-                            uri = originalUri
-                            Handler().post {
-                                loadDefaultImageView()
-                            }
+            .asBitmap()
+            .load(uri)
+            .apply(options)
+            .listener(object : RequestListener<Bitmap> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Bitmap>?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    if (uri != originalUri) {
+                        uri = originalUri
+                        Handler().post {
+                            loadDefaultImageView()
                         }
-                        return false
+                    }
+                    return false
+                }
+
+                override fun onResourceReady(
+                    bitmap: Bitmap?,
+                    model: Any?,
+                    target: Target<Bitmap>?,
+                    dataSource: DataSource?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    val currentFilter = getFiltersAdapter()?.getCurrentFilter()
+                    if (filterInitialBitmap == null) {
+                        loadCropImageView()
+                        bottomCropRotateClicked()
                     }
 
-                    override fun onResourceReady(bitmap: Bitmap?, model: Any?, target: Target<Bitmap>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-                        val currentFilter = getFiltersAdapter()?.getCurrentFilter()
-                        if (filterInitialBitmap == null) {
-                            loadCropImageView()
-                            bottomCropRotateClicked()
+                    if (filterInitialBitmap != null && currentFilter != null && currentFilter.filter.name != getString(R.string.none)) {
+                        default_image_view.onGlobalLayout {
+                            applyFilter(currentFilter)
                         }
-
-                        if (filterInitialBitmap != null && currentFilter != null && currentFilter.filter.name != getString(R.string.none)) {
-                            default_image_view.onGlobalLayout {
-                                applyFilter(currentFilter)
-                            }
-                        } else {
-                            filterInitialBitmap = bitmap
-                        }
-
-                        if (isCropIntent) {
-                            bottom_primary_filter.beGone()
-                            bottom_primary_draw.beGone()
-                        }
-
-                        return false
+                    } else {
+                        filterInitialBitmap = bitmap
                     }
-                }).into(default_image_view)
+
+                    if (isCropIntent) {
+                        bottom_primary_filter.beGone()
+                        bottom_primary_draw.beGone()
+                    }
+
+                    return false
+                }
+            }).into(default_image_view)
     }
 
     private fun loadCropImageView() {
@@ -264,9 +333,7 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
         if (!wasDrawCanvasPositioned) {
             wasDrawCanvasPositioned = true
             editor_draw_canvas.onGlobalLayout {
-                ensureBackgroundThread {
-                    fillCanvasBackground()
-                }
+                fillCanvasBackground()
             }
         }
     }
@@ -275,17 +342,17 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
         val size = Point()
         windowManager.defaultDisplay.getSize(size)
         val options = RequestOptions()
-                .format(DecodeFormat.PREFER_ARGB_8888)
-                .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .fitCenter()
+            .format(DecodeFormat.PREFER_ARGB_8888)
+            .skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .fitCenter()
 
         try {
             val builder = Glide.with(applicationContext)
-                    .asBitmap()
-                    .load(uri)
-                    .apply(options)
-                    .into(editor_draw_canvas.width, editor_draw_canvas.height)
+                .asBitmap()
+                .load(uri)
+                .apply(options)
+                .into(editor_draw_canvas.width, editor_draw_canvas.height)
 
             val bitmap = builder.get()
             runOnUiThread {
@@ -341,41 +408,39 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
                 bottom_actions_filter_list.adapter = null
                 bottom_actions_filter_list.beGone()
 
-                ensureBackgroundThread {
-                    try {
-                        val originalBitmap = Glide.with(applicationContext).asBitmap().load(uri).submit(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).get()
-                        currentFilter.filter.processFilter(originalBitmap)
-                        saveBitmapToFile(originalBitmap, it, false)
-                    } catch (e: OutOfMemoryError) {
-                        toast(R.string.out_of_memory_error)
-                    }
+                try {
+                    val originalBitmap =
+                        Glide.with(applicationContext).asBitmap().load(uri).submit(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).get()
+                    currentFilter.filter.processFilter(originalBitmap)
+                    saveBitmapToFile(originalBitmap, it, false)
+                } catch (e: OutOfMemoryError) {
+                    toast(R.string.out_of_memory_error)
                 }
             }
         }
     }
 
     private fun shareImage() {
-        ensureBackgroundThread {
-            when {
-                default_image_view.isVisible() -> {
-                    val currentFilter = getFiltersAdapter()?.getCurrentFilter()
-                    if (currentFilter == null) {
-                        toast(R.string.unknown_error_occurred)
-                        return@ensureBackgroundThread
-                    }
+        when {
+            default_image_view.isVisible() -> {
+                val currentFilter = getFiltersAdapter()?.getCurrentFilter()
+                if (currentFilter == null) {
+                    toast(R.string.unknown_error_occurred)
+                    return
+                }
 
-                    val originalBitmap = Glide.with(applicationContext).asBitmap().load(uri).submit(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).get()
-                    currentFilter.filter.processFilter(originalBitmap)
-                    shareBitmap(originalBitmap)
-                }
-                crop_image_view.isVisible() -> {
-                    isSharingBitmap = true
-                    runOnUiThread {
-                        crop_image_view.getCroppedImageAsync()
-                    }
-                }
-                editor_draw_canvas.isVisible() -> shareBitmap(editor_draw_canvas.getBitmap())
+                val originalBitmap = Glide.with(applicationContext).asBitmap().load(uri)
+                    .submit(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).get()
+                currentFilter.filter.processFilter(originalBitmap)
+                shareBitmap(originalBitmap)
             }
+            crop_image_view.isVisible() -> {
+                isSharingBitmap = true
+                runOnUiThread {
+                    crop_image_view.getCroppedImageAsync()
+                }
+            }
+            editor_draw_canvas.isVisible() -> shareBitmap(editor_draw_canvas.getBitmap())
         }
     }
 
@@ -586,55 +651,64 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
         bottom_editor_draw_actions.beVisibleIf(currPrimaryAction == PRIMARY_ACTION_DRAW)
 
         if (currPrimaryAction == PRIMARY_ACTION_FILTER && bottom_actions_filter_list.adapter == null) {
-            ensureBackgroundThread {
-                val thumbnailSize = resources.getDimension(R.dimen.bottom_filters_thumbnail_size).toInt()
+            val thumbnailSize = resources.getDimension(R.dimen.bottom_filters_thumbnail_size).toInt()
 
-                val bitmap = try {
-                    Glide.with(this)
-                            .asBitmap()
-                            .load(uri).listener(object : RequestListener<Bitmap> {
-                                override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Bitmap>?, isFirstResource: Boolean): Boolean {
-                                    showErrorToast(e.toString())
-                                    return false
-                                }
-
-                                override fun onResourceReady(resource: Bitmap?, model: Any?, target: Target<Bitmap>?, dataSource: DataSource?, isFirstResource: Boolean) = false
-                            })
-                            .submit(thumbnailSize, thumbnailSize)
-                            .get()
-                } catch (e: GlideException) {
-                    showErrorToast(e)
-                    finish()
-                    return@ensureBackgroundThread
-                }
-
-                runOnUiThread {
-                    val filterThumbnailsManager = FilterThumbnailsManager()
-                    filterThumbnailsManager.clearThumbs()
-
-                    val noFilter = Filter(getString(R.string.none))
-                    filterThumbnailsManager.addThumb(FilterItem(bitmap, noFilter))
-
-                    FilterPack.getFilterPack(this).forEach {
-                        val filterItem = FilterItem(bitmap, it)
-                        filterThumbnailsManager.addThumb(filterItem)
-                    }
-
-                    val filterItems = filterThumbnailsManager.processThumbs()
-                    val adapter = FiltersAdapter(applicationContext, filterItems) {
-                        val layoutManager = bottom_actions_filter_list.layoutManager as LinearLayoutManager
-                        applyFilter(filterItems[it])
-
-                        if (it == layoutManager.findLastCompletelyVisibleItemPosition() || it == layoutManager.findLastVisibleItemPosition()) {
-                            bottom_actions_filter_list.smoothScrollBy(thumbnailSize, 0)
-                        } else if (it == layoutManager.findFirstCompletelyVisibleItemPosition() || it == layoutManager.findFirstVisibleItemPosition()) {
-                            bottom_actions_filter_list.smoothScrollBy(-thumbnailSize, 0)
+            val bitmap = try {
+                Glide.with(this)
+                    .asBitmap()
+                    .load(uri).listener(object : RequestListener<Bitmap> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Bitmap>?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            showErrorToast(e.toString())
+                            return false
                         }
-                    }
 
-                    bottom_actions_filter_list.adapter = adapter
-                    adapter.notifyDataSetChanged()
+                        override fun onResourceReady(
+                            resource: Bitmap?,
+                            model: Any?,
+                            target: Target<Bitmap>?,
+                            dataSource: DataSource?,
+                            isFirstResource: Boolean
+                        ) = false
+                    })
+                    .submit(thumbnailSize, thumbnailSize)
+                    .get()
+            } catch (e: GlideException) {
+                showErrorToast(e)
+                finish()
+                return
+            }
+
+            runOnUiThread {
+                val filterThumbnailsManager = FilterThumbnailsManager()
+                filterThumbnailsManager.clearThumbs()
+
+                val noFilter = Filter(getString(R.string.none))
+                filterThumbnailsManager.addThumb(FilterItem(bitmap, noFilter))
+
+                FilterPack.getFilterPack(this).forEach {
+                    val filterItem = FilterItem(bitmap, it)
+                    filterThumbnailsManager.addThumb(filterItem)
                 }
+
+                val filterItems = filterThumbnailsManager.processThumbs()
+                val adapter = FiltersAdapter(applicationContext, filterItems) {
+                    val layoutManager = bottom_actions_filter_list.layoutManager as LinearLayoutManager
+                    applyFilter(filterItems[it])
+
+                    if (it == layoutManager.findLastCompletelyVisibleItemPosition() || it == layoutManager.findLastVisibleItemPosition()) {
+                        bottom_actions_filter_list.smoothScrollBy(thumbnailSize, 0)
+                    } else if (it == layoutManager.findFirstCompletelyVisibleItemPosition() || it == layoutManager.findFirstVisibleItemPosition()) {
+                        bottom_actions_filter_list.smoothScrollBy(-thumbnailSize, 0)
+                    }
+                }
+
+                bottom_actions_filter_list.adapter = adapter
+                adapter.notifyDataSetChanged()
             }
         }
 
@@ -672,7 +746,13 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
     }
 
     private fun updateAspectRatioButtons() {
-        arrayOf(bottom_aspect_ratio_free, bottom_aspect_ratio_one_one, bottom_aspect_ratio_four_three, bottom_aspect_ratio_sixteen_nine, bottom_aspect_ratio_other).forEach {
+        arrayOf(
+            bottom_aspect_ratio_free,
+            bottom_aspect_ratio_one_one,
+            bottom_aspect_ratio_four_three,
+            bottom_aspect_ratio_sixteen_nine,
+            bottom_aspect_ratio_other
+        ).forEach {
             it.setTextColor(Color.WHITE)
         }
 
@@ -800,7 +880,8 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
         if (newPath.isEmpty()) {
             val filename = applicationContext.getFilenameFromContentUri(saveUri) ?: ""
             if (filename.isNotEmpty()) {
-                val path = if (intent.extras?.containsKey(REAL_FILE_PATH) == true) intent.getStringExtra(REAL_FILE_PATH).getParentPath() else internalStoragePath
+                val path = if (intent.extras?.containsKey(REAL_FILE_PATH) == true) intent.getStringExtra(REAL_FILE_PATH)
+                    .getParentPath() else internalStoragePath
                 newPath = "$path/$filename"
                 shouldAppendFilename = false
             }
@@ -817,9 +898,15 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
     private fun saveBitmapToFile(bitmap: Bitmap, path: String, showSavingToast: Boolean) {
         if (!packageName.contains("slootelibomelpmis".reversed(), true)) {
             if (baseConfig.appRunCount > 100) {
-                val label = "sknahT .moc.slootelibomelpmis.www morf eno lanigiro eht daolnwod ytefas nwo ruoy roF .ppa eht fo noisrev ekaf a gnisu era uoY".reversed()
+                val label =
+                    "sknahT .moc.slootelibomelpmis.www morf eno lanigiro eht daolnwod ytefas nwo ruoy roF .ppa eht fo noisrev ekaf a gnisu era uoY".reversed()
                 runOnUiThread {
-                    ConfirmationDialog(this, label, positive = com.simplemobiletools.commons.R.string.ok, negative = 0) {
+                    ConfirmationDialog(
+                        this,
+                        label,
+                        positive = com.simplemobiletools.commons.R.string.ok,
+                        negative = 0
+                    ) {
                         launchViewIntent("6629852208836920709=di?ved/sppa/erots/moc.elgoog.yalp//:sptth".reversed())
                     }
                 }
@@ -828,15 +915,13 @@ class EditActivity : SimpleActivity(), CropImageView.OnCropImageCompleteListener
         }
 
         try {
-            ensureBackgroundThread {
-                val file = File(path)
-                val fileDirItem = FileDirItem(path, path.getFilenameFromPath())
-                getFileOutputStream(fileDirItem, true) {
-                    if (it != null) {
-                        saveBitmap(file, bitmap, it, showSavingToast)
-                    } else {
-                        toast(R.string.image_editing_failed)
-                    }
+            val file = File(path)
+            val fileDirItem = FileDirItem(path, path.getFilenameFromPath())
+            getFileOutputStream(fileDirItem, true) {
+                if (it != null) {
+                    saveBitmap(file, bitmap, it, showSavingToast)
+                } else {
+                    toast(R.string.image_editing_failed)
                 }
             }
         } catch (e: Exception) {

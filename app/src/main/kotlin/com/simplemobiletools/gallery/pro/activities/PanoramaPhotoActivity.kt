@@ -11,12 +11,21 @@ import android.view.Window
 import android.widget.RelativeLayout
 import com.google.vr.sdk.widgets.pano.VrPanoramaEventListener
 import com.google.vr.sdk.widgets.pano.VrPanoramaView
-import com.simplemobiletools.commons.extensions.*
-import com.simplemobiletools.commons.helpers.ensureBackgroundThread
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.navigationBarHeight
+import com.simplemobiletools.commons.extensions.navigationBarWidth
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.toast
 import com.simplemobiletools.gallery.pro.R
-import com.simplemobiletools.gallery.pro.extensions.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.hideSystemUI
+import com.simplemobiletools.gallery.pro.extensions.showSystemUI
 import com.simplemobiletools.gallery.pro.helpers.PATH
-import kotlinx.android.synthetic.main.activity_panorama_photo.*
+import kotlinx.android.synthetic.main.activity_panorama_photo.cardboard
+import kotlinx.android.synthetic.main.activity_panorama_photo.explore
+import kotlinx.android.synthetic.main.activity_panorama_photo.panorama_gradient_background
+import kotlinx.android.synthetic.main.activity_panorama_photo.panorama_view
 
 open class PanoramaPhotoActivity : SimpleActivity() {
     private val CARDBOARD_DISPLAY_MODE = 3
@@ -85,31 +94,29 @@ open class PanoramaPhotoActivity : SimpleActivity() {
         try {
             val options = VrPanoramaView.Options()
             options.inputType = VrPanoramaView.Options.TYPE_MONO
-            ensureBackgroundThread {
-                val bitmap = getBitmapToLoad(path)
-                runOnUiThread {
-                    panorama_view.apply {
-                        beVisible()
-                        loadImageFromBitmap(bitmap, options)
-                        setFlingingEnabled(true)
-                        setPureTouchTracking(true)
+            val bitmap = getBitmapToLoad(path)
+            runOnUiThread {
+                panorama_view.apply {
+                    beVisible()
+                    loadImageFromBitmap(bitmap, options)
+                    setFlingingEnabled(true)
+                    setPureTouchTracking(true)
 
-                        // add custom buttons so we can position them and toggle visibility as desired
-                        setFullscreenButtonEnabled(false)
-                        setInfoButtonEnabled(false)
-                        setTransitionViewEnabled(false)
-                        setStereoModeButtonEnabled(false)
+                    // add custom buttons so we can position them and toggle visibility as desired
+                    setFullscreenButtonEnabled(false)
+                    setInfoButtonEnabled(false)
+                    setTransitionViewEnabled(false)
+                    setStereoModeButtonEnabled(false)
 
-                        setOnClickListener {
+                    setOnClickListener {
+                        handleClick()
+                    }
+
+                    setEventListener(object : VrPanoramaEventListener() {
+                        override fun onClick() {
                             handleClick()
                         }
-
-                        setEventListener(object : VrPanoramaEventListener() {
-                            override fun onClick() {
-                                handleClick()
-                            }
-                        })
-                    }
+                    })
                 }
             }
         } catch (e: Exception) {

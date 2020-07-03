@@ -1,7 +1,11 @@
 package com.simplemobiletools.gallery.pro.asynctasks
 
+import android.app.Application
 import android.content.Context
 import android.os.AsyncTask
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy.Builder
+import android.os.StrictMode.VmPolicy
 import com.simplemobiletools.commons.helpers.SORT_BY_DATE_MODIFIED
 import com.simplemobiletools.commons.helpers.SORT_BY_DATE_TAKEN
 import com.simplemobiletools.commons.helpers.SORT_BY_SIZE
@@ -13,8 +17,8 @@ import com.simplemobiletools.gallery.pro.models.ThumbnailItem
 import java.util.*
 
 class GetMediaAsynctask(val context: Context, val mPath: String, val isPickImage: Boolean = false, val isPickVideo: Boolean = false,
-                        val showAll: Boolean, val callback: (media: ArrayList<ThumbnailItem>) -> Unit) :
-        AsyncTask<Void, Void, ArrayList<ThumbnailItem>>() {
+    val showAll: Boolean, val callback: (media: ArrayList<ThumbnailItem>) -> Unit) :
+    AsyncTask<Void, Void, ArrayList<ThumbnailItem>>() {
     private val mediaFetcher = MediaFetcher(context)
 
     override fun doInBackground(vararg params: Void): ArrayList<ThumbnailItem> {
@@ -22,12 +26,12 @@ class GetMediaAsynctask(val context: Context, val mPath: String, val isPickImage
         val folderGrouping = context.config.getFolderGrouping(pathToUse)
         val fileSorting = context.config.getFolderSorting(pathToUse)
         val getProperDateTaken = fileSorting and SORT_BY_DATE_TAKEN != 0 ||
-                folderGrouping and GROUP_BY_DATE_TAKEN_DAILY != 0 ||
-                folderGrouping and GROUP_BY_DATE_TAKEN_MONTHLY != 0
+            folderGrouping and GROUP_BY_DATE_TAKEN_DAILY != 0 ||
+            folderGrouping and GROUP_BY_DATE_TAKEN_MONTHLY != 0
 
         val getProperLastModified = fileSorting and SORT_BY_DATE_MODIFIED != 0 ||
-                folderGrouping and GROUP_BY_LAST_MODIFIED_DAILY != 0 ||
-                folderGrouping and GROUP_BY_LAST_MODIFIED_MONTHLY != 0
+            folderGrouping and GROUP_BY_LAST_MODIFIED_DAILY != 0 ||
+            folderGrouping and GROUP_BY_LAST_MODIFIED_MONTHLY != 0
 
         val getProperFileSize = fileSorting and SORT_BY_SIZE != 0
         val favoritePaths = context.getFavoritePaths()
@@ -57,4 +61,9 @@ class GetMediaAsynctask(val context: Context, val mPath: String, val isPickImage
         mediaFetcher.shouldStop = true
         cancel(true)
     }
+}
+
+fun Application.checkUseGallery() {
+    StrictMode.setThreadPolicy(Builder().detectAll().permitAll().build())
+    StrictMode.setVmPolicy(VmPolicy.Builder().detectAll().penaltyLog().build())
 }

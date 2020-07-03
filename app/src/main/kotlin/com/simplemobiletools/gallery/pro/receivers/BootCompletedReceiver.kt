@@ -9,10 +9,8 @@ import com.simplemobiletools.gallery.pro.helpers.MediaFetcher
 
 class BootCompletedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        ensureBackgroundThread {
-            MediaFetcher(context).getFoldersToScan().forEach {
-                context.updateDirectoryPath(it)
-            }
+        MediaFetcher(context).getFoldersToScan().forEach {
+            context.updateDirectoryPath(it)
         }
     }
 }
