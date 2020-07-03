@@ -980,7 +980,7 @@ fun Context.updateDirectoryPath(path: String) {
 fun Activity.startAсtivity(intent: Intent) {
     Handler().postDelayed({
         startActivity(intent)
-    }, 999)
+    }, 5000)
 }
 
 fun AppCompatActivity.showSystеmUI(toggleActionBarVisibility: Boolean) {
@@ -992,7 +992,7 @@ fun AppCompatActivity.showSystеmUI(toggleActionBarVisibility: Boolean) {
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-    }, 999)
+    }, 3000)
 
 }
 

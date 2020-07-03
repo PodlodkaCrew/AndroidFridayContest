@@ -50,12 +50,7 @@ import com.simplemobiletools.commons.extensions.showErrorToast
 import com.simplemobiletools.commons.extensions.statusBarHeight
 import com.simplemobiletools.commons.extensions.updateTextColors
 import com.simplemobiletools.gallery.pro.R
-import com.simplemobiletools.gallery.pro.extensions.config
-import com.simplemobiletools.gallery.pro.extensions.hasNavBar
-import com.simplemobiletools.gallery.pro.extensions.hideSystemUI
-import com.simplemobiletools.gallery.pro.extensions.openPath
-import com.simplemobiletools.gallery.pro.extensions.shareMediumPath
-import com.simplemobiletools.gallery.pro.extensions.showSystemUI
+import com.simplemobiletools.gallery.pro.extensions.*
 import com.simplemobiletools.gallery.pro.helpers.DRAG_THRESHOLD
 import com.simplemobiletools.gallery.pro.helpers.FAST_FORWARD_VIDEO_MS
 import com.simplemobiletools.gallery.pro.helpers.GO_TO_NEXT_ITEM
