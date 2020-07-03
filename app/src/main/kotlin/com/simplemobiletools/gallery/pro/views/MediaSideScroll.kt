@@ -1,6 +1,6 @@
 package com.simplemobiletools.gallery.pro.views
 
-import androidx.appcompat.app.AppCompatActivity
+import android.app.Activity
 import android.content.Context
 import android.graphics.Paint
 import android.media.AudioManager
@@ -34,13 +34,13 @@ class MediaSideScroll(context: Context, attrs: AttributeSet) : RelativeLayout(co
     private var mSlideInfoText = ""
     private var mSlideInfoFadeHandler = Handler()
     private var mParentView: ViewGroup? = null
-    private var activity: AppCompatActivity? = null
+    private var activity: Activity? = null
     private var doubleTap: ((Float, Float) -> Unit)? = null
 
     private lateinit var slideInfoView: TextView
     private lateinit var singleTap: (Float, Float) -> Unit
 
-    fun initialize(activity: AppCompatActivity, slideInfoView: TextView, isBrightness: Boolean, parentView: ViewGroup?, singleTap: (x: Float, y: Float) -> Unit,
+    fun initialize(activity: Activity, slideInfoView: TextView, isBrightness: Boolean, parentView: ViewGroup?, singleTap: (x: Float, y: Float) -> Unit,
                    doubleTap: ((x: Float, y: Float) -> Unit)? = null) {
         this.activity = activity
         this.slideInfoView = slideInfoView
