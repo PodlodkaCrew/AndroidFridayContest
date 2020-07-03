@@ -17,8 +17,21 @@ import com.simplemobiletools.commons.adapters.MyRecyclerViewAdapter
 import com.simplemobiletools.commons.dialogs.PropertiesDialog
 import com.simplemobiletools.commons.dialogs.RenameDialog
 import com.simplemobiletools.commons.dialogs.RenameItemDialog
-import com.simplemobiletools.commons.extensions.*
-import com.simplemobiletools.commons.helpers.ensureBackgroundThread
+import com.simplemobiletools.commons.extensions.applyColorFilter
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.convertToBitmap
+import com.simplemobiletools.commons.extensions.getFilenameFromPath
+import com.simplemobiletools.commons.extensions.getFormattedDuration
+import com.simplemobiletools.commons.extensions.getOTGPublicPath
+import com.simplemobiletools.commons.extensions.handleDeletePasswordProtection
+import com.simplemobiletools.commons.extensions.hasOTGConnected
+import com.simplemobiletools.commons.extensions.isImageFast
+import com.simplemobiletools.commons.extensions.isPathOnOTG
+import com.simplemobiletools.commons.extensions.needsStupidWritePermissions
+import com.simplemobiletools.commons.extensions.rescanPaths
+import com.simplemobiletools.commons.extensions.toast
 import com.simplemobiletools.commons.helpers.isOreoPlus
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.commons.views.FastScroller
@@ -26,19 +39,46 @@ import com.simplemobiletools.commons.views.MyRecyclerView
 import com.simplemobiletools.gallery.pro.R
 import com.simplemobiletools.gallery.pro.activities.ViewPagerActivity
 import com.simplemobiletools.gallery.pro.dialogs.DeleteWithRememberDialog
-import com.simplemobiletools.gallery.pro.extensions.*
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.fixDateTaken
+import com.simplemobiletools.gallery.pro.extensions.getShortcutImage
+import com.simplemobiletools.gallery.pro.extensions.loadImage
+import com.simplemobiletools.gallery.pro.extensions.openEditor
+import com.simplemobiletools.gallery.pro.extensions.openPath
+import com.simplemobiletools.gallery.pro.extensions.recycleBinPath
+import com.simplemobiletools.gallery.pro.extensions.rescanFolderMediaSync
+import com.simplemobiletools.gallery.pro.extensions.restoreRecycleBinPaths
+import com.simplemobiletools.gallery.pro.extensions.saveRotatedImageToFile
+import com.simplemobiletools.gallery.pro.extensions.setAs
+import com.simplemobiletools.gallery.pro.extensions.shareMediaPaths
+import com.simplemobiletools.gallery.pro.extensions.shareMediumPath
+import com.simplemobiletools.gallery.pro.extensions.toggleFileVisibility
+import com.simplemobiletools.gallery.pro.extensions.tryCopyMoveFilesTo
+import com.simplemobiletools.gallery.pro.extensions.updateDBMediaPath
+import com.simplemobiletools.gallery.pro.extensions.updateFavorite
+import com.simplemobiletools.gallery.pro.extensions.updateFavoritePaths
+import com.simplemobiletools.gallery.pro.helpers.FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.PATH
+import com.simplemobiletools.gallery.pro.helpers.RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.SHOW_ALL
+import com.simplemobiletools.gallery.pro.helpers.SHOW_FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.SHOW_RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.TYPE_GIFS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_RAWS
+import com.simplemobiletools.gallery.pro.helpers.VIEW_TYPE_LIST
 import com.simplemobiletools.gallery.pro.interfaces.MediaOperationsListener
 import com.simplemobiletools.gallery.pro.models.Medium
 import com.simplemobiletools.gallery.pro.models.ThumbnailItem
 import com.simplemobiletools.gallery.pro.models.ThumbnailSection
 import kotlinx.android.synthetic.main.photo_video_item_grid.view.*
 import kotlinx.android.synthetic.main.thumbnail_section.view.*
-import java.util.*
+import java.util.ArrayList
 
-class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<ThumbnailItem>, val listener: MediaOperationsListener?, val isAGetIntent: Boolean,
-                   val allowMultiplePicks: Boolean, val path: String, recyclerView: MyRecyclerView, fastScroller: FastScroller? = null, itemClick: (Any) -> Unit) :
-        MyRecyclerViewAdapter(activity, recyclerView, fastScroller, itemClick) {
+class MediaAdapter(
+    activity: BaseSimpleActivity, var media: MutableList<ThumbnailItem>, val listener: MediaOperationsListener?, val isAGetIntent: Boolean,
+    val allowMultiplePicks: Boolean, val path: String, recyclerView: MyRecyclerView, fastScroller: FastScroller? = null, itemClick: (Any) -> Unit
+) :
+    MyRecyclerViewAdapter(activity, recyclerView, fastScroller, itemClick) {
 
     private val INSTANT_LOAD_DURATION = 2000L
     private val IMAGE_LOAD_DELAY = 100L
@@ -218,14 +258,12 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
         if (selectedKeys.size == 1) {
             val oldPath = getFirstSelectedItemPath() ?: return
             RenameItemDialog(activity, oldPath) {
-                ensureBackgroundThread {
-                    activity.updateDBMediaPath(oldPath, it)
+                activity.updateDBMediaPath(oldPath, it)
 
-                    activity.runOnUiThread {
-                        enableInstantLoad()
-                        listener?.refreshItems()
-                        finishActMode()
-                    }
+                activity.runOnUiThread {
+                    enableInstantLoad()
+                    listener?.refreshItems()
+                    finishActMode()
                 }
             }
         } else {
@@ -253,27 +291,23 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
     }
 
     private fun toggleFileVisibility(hide: Boolean) {
-        ensureBackgroundThread {
-            getSelectedItems().forEach {
-                activity.toggleFileVisibility(it.path, hide)
-            }
-            activity.runOnUiThread {
-                listener?.refreshItems()
-                finishActMode()
-            }
+        getSelectedItems().forEach {
+            activity.toggleFileVisibility(it.path, hide)
+        }
+        activity.runOnUiThread {
+            listener?.refreshItems()
+            finishActMode()
         }
     }
 
     private fun toggleFavorites(add: Boolean) {
-        ensureBackgroundThread {
-            getSelectedItems().forEach {
-                it.isFavorite = add
-                activity.updateFavorite(it.path, add)
-            }
-            activity.runOnUiThread {
-                listener?.refreshItems()
-                finishActMode()
-            }
+        getSelectedItems().forEach {
+            it.isFavorite = add
+            activity.updateFavorite(it.path, add)
+        }
+        activity.runOnUiThread {
+            listener?.refreshItems()
+            finishActMode()
         }
     }
 
@@ -294,19 +328,17 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
 
     private fun rotateSelection(degrees: Int) {
         activity.toast(R.string.saving)
-        ensureBackgroundThread {
-            val paths = getSelectedPaths().filter { it.isImageFast() }
-            var fileCnt = paths.size
-            rotatedImagePaths.clear()
-            paths.forEach {
-                rotatedImagePaths.add(it)
-                activity.saveRotatedImageToFile(it, it, degrees, true) {
-                    fileCnt--
-                    if (fileCnt == 0) {
-                        activity.runOnUiThread {
-                            listener?.refreshItems()
-                            finishActMode()
-                        }
+        val paths = getSelectedPaths().filter { it.isImageFast() }
+        var fileCnt = paths.size
+        rotatedImagePaths.clear()
+        paths.forEach {
+            rotatedImagePaths.add(it)
+            activity.saveRotatedImageToFile(it, it, degrees, true) {
+                fileCnt--
+                if (fileCnt == 0) {
+                    activity.runOnUiThread {
+                        listener?.refreshItems()
+                        finishActMode()
                     }
                 }
             }
@@ -338,8 +370,8 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
         activity.tryCopyMoveFilesTo(fileDirItems, isCopyOperation) {
             val destinationPath = it
             config.tempFolderPath = ""
-            activity.applicationContext.rescanFolderMedia(destinationPath)
-            activity.applicationContext.rescanFolderMedia(fileDirItems.first().getParentPath())
+            activity.applicationContext.rescanFolderMediaSync(destinationPath)
+            activity.applicationContext.rescanFolderMediaSync(fileDirItems.first().getParentPath())
 
             val newPaths = fileDirItems.map { "$destinationPath/${it.name}" }.toMutableList() as ArrayList<String>
             activity.rescanPaths(newPaths) {
@@ -369,10 +401,10 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
                 }
 
                 val shortcut = ShortcutInfo.Builder(activity, path)
-                        .setShortLabel(path.getFilenameFromPath())
-                        .setIcon(Icon.createWithBitmap(drawable.convertToBitmap()))
-                        .setIntent(intent)
-                        .build()
+                    .setShortLabel(path.getFilenameFromPath())
+                    .setIcon(Icon.createWithBitmap(drawable.convertToBitmap()))
+                    .setIntent(intent)
+                    .build()
 
                 manager.requestPinShortcut(shortcut, null)
             }
@@ -380,11 +412,9 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
     }
 
     private fun fixDateTaken() {
-        ensureBackgroundThread {
-            activity.fixDateTaken(getSelectedPaths(), true) {
-                listener?.refreshItems()
-                finishActMode()
-            }
+        activity.fixDateTaken(getSelectedPaths(), true) {
+            listener?.refreshItems()
+            finishActMode()
         }
     }
 
@@ -510,11 +540,13 @@ class MediaAdapter(activity: BaseSimpleActivity, var media: MutableList<Thumbnai
             }
 
             if (showFileTypes && (medium.isGIF() || medium.isRaw() || medium.isSVG())) {
-                file_type.setText(when (medium.type) {
-                    TYPE_GIFS -> R.string.gif
-                    TYPE_RAWS -> R.string.raw
-                    else -> R.string.svg
-                })
+                file_type.setText(
+                    when (medium.type) {
+                        TYPE_GIFS -> R.string.gif
+                        TYPE_RAWS -> R.string.raw
+                        else -> R.string.svg
+                    }
+                )
                 file_type.beVisible()
             } else {
                 file_type.beGone()

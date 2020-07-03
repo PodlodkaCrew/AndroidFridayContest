@@ -39,8 +39,53 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.simplemobiletools.commons.dialogs.PropertiesDialog
 import com.simplemobiletools.commons.dialogs.RenameItemDialog
-import com.simplemobiletools.commons.extensions.*
-import com.simplemobiletools.commons.helpers.*
+import com.simplemobiletools.commons.extensions.actionBarHeight
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.convertToBitmap
+import com.simplemobiletools.commons.extensions.copyTo
+import com.simplemobiletools.commons.extensions.getCompressionFormat
+import com.simplemobiletools.commons.extensions.getDoesFilePathExist
+import com.simplemobiletools.commons.extensions.getDuration
+import com.simplemobiletools.commons.extensions.getFileOutputStream
+import com.simplemobiletools.commons.extensions.getFilenameFromPath
+import com.simplemobiletools.commons.extensions.getFinalUriFromPath
+import com.simplemobiletools.commons.extensions.getImageResolution
+import com.simplemobiletools.commons.extensions.getIsPathDirectory
+import com.simplemobiletools.commons.extensions.getParentPath
+import com.simplemobiletools.commons.extensions.getResolution
+import com.simplemobiletools.commons.extensions.getStringValue
+import com.simplemobiletools.commons.extensions.getUriMimeType
+import com.simplemobiletools.commons.extensions.handleDeletePasswordProtection
+import com.simplemobiletools.commons.extensions.handleLockedFolderOpening
+import com.simplemobiletools.commons.extensions.hasPermission
+import com.simplemobiletools.commons.extensions.isGif
+import com.simplemobiletools.commons.extensions.isMediaFile
+import com.simplemobiletools.commons.extensions.isPortrait
+import com.simplemobiletools.commons.extensions.isRawFast
+import com.simplemobiletools.commons.extensions.isSvg
+import com.simplemobiletools.commons.extensions.isVideoFast
+import com.simplemobiletools.commons.extensions.isVisible
+import com.simplemobiletools.commons.extensions.navigationBarHeight
+import com.simplemobiletools.commons.extensions.needsStupidWritePermissions
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.rescanPaths
+import com.simplemobiletools.commons.extensions.scanPathRecursively
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.statusBarHeight
+import com.simplemobiletools.commons.extensions.toast
+import com.simplemobiletools.commons.extensions.tryGenericMimeType
+import com.simplemobiletools.commons.extensions.updateLastModified
+import com.simplemobiletools.commons.helpers.IS_FROM_GALLERY
+import com.simplemobiletools.commons.helpers.NOMEDIA
+import com.simplemobiletools.commons.helpers.PERMISSION_WRITE_STORAGE
+import com.simplemobiletools.commons.helpers.REAL_FILE_PATH
+import com.simplemobiletools.commons.helpers.REQUEST_EDIT_IMAGE
+import com.simplemobiletools.commons.helpers.REQUEST_SET_AS
+import com.simplemobiletools.commons.helpers.SORT_BY_RANDOM
+import com.simplemobiletools.commons.helpers.isNougatPlus
+import com.simplemobiletools.commons.helpers.isOreoPlus
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.gallery.pro.BuildConfig
 import com.simplemobiletools.gallery.pro.R
@@ -50,18 +95,89 @@ import com.simplemobiletools.gallery.pro.dialogs.DeleteWithRememberDialog
 import com.simplemobiletools.gallery.pro.dialogs.ResizeWithPathDialog
 import com.simplemobiletools.gallery.pro.dialogs.SaveAsDialog
 import com.simplemobiletools.gallery.pro.dialogs.SlideshowDialog
-import com.simplemobiletools.gallery.pro.extensions.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.favoritesDB
+import com.simplemobiletools.gallery.pro.extensions.fixDateTaken
+import com.simplemobiletools.gallery.pro.extensions.getFavoritePaths
+import com.simplemobiletools.gallery.pro.extensions.getShortcutImage
+import com.simplemobiletools.gallery.pro.extensions.hideSystemUI
+import com.simplemobiletools.gallery.pro.extensions.isDownloadsFolder
+import com.simplemobiletools.gallery.pro.extensions.launchSettings
+import com.simplemobiletools.gallery.pro.extensions.mediaDB
+import com.simplemobiletools.gallery.pro.extensions.movePathsInRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.openEditor
+import com.simplemobiletools.gallery.pro.extensions.openPath
+import com.simplemobiletools.gallery.pro.extensions.recycleBinPath
+import com.simplemobiletools.gallery.pro.extensions.restoreRecycleBinPath
+import com.simplemobiletools.gallery.pro.extensions.saveRotatedImageToFile
+import com.simplemobiletools.gallery.pro.extensions.setAs
+import com.simplemobiletools.gallery.pro.extensions.shareMediumPath
+import com.simplemobiletools.gallery.pro.extensions.showFileOnMap
+import com.simplemobiletools.gallery.pro.extensions.showSystemUI
+import com.simplemobiletools.gallery.pro.extensions.toggleFileVisibility
+import com.simplemobiletools.gallery.pro.extensions.tryCopyMoveFilesTo
+import com.simplemobiletools.gallery.pro.extensions.tryDeleteFileDirItem
+import com.simplemobiletools.gallery.pro.extensions.updateDBMediaPath
+import com.simplemobiletools.gallery.pro.extensions.updateFavorite
+import com.simplemobiletools.gallery.pro.extensions.updateFavoritePaths
 import com.simplemobiletools.gallery.pro.fragments.PhotoFragment
 import com.simplemobiletools.gallery.pro.fragments.VideoFragment
 import com.simplemobiletools.gallery.pro.fragments.ViewPagerFragment
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_CHANGE_ORIENTATION
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_COPY
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_DELETE
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_EDIT
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_MOVE
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_PROPERTIES
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_RENAME
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_RESIZE
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_ROTATE
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_SET_AS
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_SHARE
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_SHOW_ON_MAP
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_SLIDESHOW
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_TOGGLE_FAVORITE
+import com.simplemobiletools.gallery.pro.helpers.BOTTOM_ACTION_TOGGLE_VISIBILITY
+import com.simplemobiletools.gallery.pro.helpers.DefaultPageTransformer
+import com.simplemobiletools.gallery.pro.helpers.FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.FadePageTransformer
+import com.simplemobiletools.gallery.pro.helpers.GO_TO_NEXT_ITEM
+import com.simplemobiletools.gallery.pro.helpers.GO_TO_PREV_ITEM
+import com.simplemobiletools.gallery.pro.helpers.HIDE_SYSTEM_UI_DELAY
+import com.simplemobiletools.gallery.pro.helpers.IS_VIEW_INTENT
+import com.simplemobiletools.gallery.pro.helpers.MAX_PRINT_SIDE_SIZE
+import com.simplemobiletools.gallery.pro.helpers.PATH
+import com.simplemobiletools.gallery.pro.helpers.PORTRAIT_PATH
+import com.simplemobiletools.gallery.pro.helpers.RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.ROTATE_BY_ASPECT_RATIO
+import com.simplemobiletools.gallery.pro.helpers.ROTATE_BY_DEVICE_ROTATION
+import com.simplemobiletools.gallery.pro.helpers.ROTATE_BY_SYSTEM_SETTING
+import com.simplemobiletools.gallery.pro.helpers.SHOW_ALL
+import com.simplemobiletools.gallery.pro.helpers.SHOW_FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.SHOW_NEXT_ITEM
+import com.simplemobiletools.gallery.pro.helpers.SHOW_PREV_ITEM
+import com.simplemobiletools.gallery.pro.helpers.SHOW_RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.SKIP_AUTHENTICATION
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_ANIMATION_FADE
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_ANIMATION_NONE
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_ANIMATION_SLIDE
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_DEFAULT_INTERVAL
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_FADE_DURATION
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_SLIDE_DURATION
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_START_ON_ENTER
+import com.simplemobiletools.gallery.pro.helpers.TYPE_GIFS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_IMAGES
+import com.simplemobiletools.gallery.pro.helpers.TYPE_PORTRAITS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_RAWS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_SVGS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_VIDEOS
 import com.simplemobiletools.gallery.pro.models.Medium
 import com.simplemobiletools.gallery.pro.models.ThumbnailItem
 import kotlinx.android.synthetic.main.activity_medium.*
 import kotlinx.android.synthetic.main.bottom_actions.*
 import java.io.File
 import java.io.OutputStream
-import java.util.*
+import java.util.ArrayList
 
 class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, ViewPagerFragment.FragmentListener {
     private val REQUEST_VIEW_VIDEO = 1
@@ -178,10 +294,14 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             findItem(R.id.menu_save_as).isVisible = rotationDegrees != 0
             findItem(R.id.menu_print).isVisible = currentMedium.isImage() || currentMedium.isRaw()
             findItem(R.id.menu_resize).isVisible = visibleBottomActions and BOTTOM_ACTION_RESIZE == 0 && currentMedium.isImage()
-            findItem(R.id.menu_hide).isVisible = !currentMedium.isHidden() && visibleBottomActions and BOTTOM_ACTION_TOGGLE_VISIBILITY == 0 && !currentMedium.getIsInRecycleBin()
-            findItem(R.id.menu_unhide).isVisible = currentMedium.isHidden() && visibleBottomActions and BOTTOM_ACTION_TOGGLE_VISIBILITY == 0 && !currentMedium.getIsInRecycleBin()
-            findItem(R.id.menu_add_to_favorites).isVisible = !currentMedium.isFavorite && visibleBottomActions and BOTTOM_ACTION_TOGGLE_FAVORITE == 0 && !currentMedium.getIsInRecycleBin()
-            findItem(R.id.menu_remove_from_favorites).isVisible = currentMedium.isFavorite && visibleBottomActions and BOTTOM_ACTION_TOGGLE_FAVORITE == 0 && !currentMedium.getIsInRecycleBin()
+            findItem(R.id.menu_hide).isVisible =
+                !currentMedium.isHidden() && visibleBottomActions and BOTTOM_ACTION_TOGGLE_VISIBILITY == 0 && !currentMedium.getIsInRecycleBin()
+            findItem(R.id.menu_unhide).isVisible =
+                currentMedium.isHidden() && visibleBottomActions and BOTTOM_ACTION_TOGGLE_VISIBILITY == 0 && !currentMedium.getIsInRecycleBin()
+            findItem(R.id.menu_add_to_favorites).isVisible =
+                !currentMedium.isFavorite && visibleBottomActions and BOTTOM_ACTION_TOGGLE_FAVORITE == 0 && !currentMedium.getIsInRecycleBin()
+            findItem(R.id.menu_remove_from_favorites).isVisible =
+                currentMedium.isFavorite && visibleBottomActions and BOTTOM_ACTION_TOGGLE_FAVORITE == 0 && !currentMedium.getIsInRecycleBin()
             findItem(R.id.menu_restore_file).isVisible = currentMedium.path.startsWith(recycleBinPath)
             findItem(R.id.menu_create_shortcut).isVisible = isOreoPlus()
             findItem(R.id.menu_change_orientation).isVisible = rotationDegrees == 0 && visibleBottomActions and BOTTOM_ACTION_CHANGE_ORIENTATION == 0
@@ -191,7 +311,8 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                     MenuItem.SHOW_AS_ACTION_ALWAYS
                 } else {
                     MenuItem.SHOW_AS_ACTION_IF_ROOM
-                })
+                }
+            )
         }
 
         if (visibleBottomActions != 0) {
@@ -377,23 +498,33 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
         }
 
         if (intent.action == "com.android.camera.action.REVIEW") {
-            ensureBackgroundThread {
-                if (mediaDB.getMediaFromPath(mPath).isEmpty()) {
-                    val type = when {
-                        mPath.isVideoFast() -> TYPE_VIDEOS
-                        mPath.isGif() -> TYPE_GIFS
-                        mPath.isSvg() -> TYPE_SVGS
-                        mPath.isRawFast() -> TYPE_RAWS
-                        mPath.isPortrait() -> TYPE_PORTRAITS
-                        else -> TYPE_IMAGES
-                    }
-
-                    val isFavorite = favoritesDB.isFavorite(mPath)
-                    val duration = if (type == TYPE_VIDEOS) getDuration(mPath) ?: 0 else 0
-                    val ts = System.currentTimeMillis()
-                    val medium = Medium(null, mPath.getFilenameFromPath(), mPath, mPath.getParentPath(), ts, ts, File(mPath).length(), type, duration, isFavorite, 0)
-                    mediaDB.insert(medium)
+            if (mediaDB.getMediaFromPath(mPath).isEmpty()) {
+                val type = when {
+                    mPath.isVideoFast() -> TYPE_VIDEOS
+                    mPath.isGif() -> TYPE_GIFS
+                    mPath.isSvg() -> TYPE_SVGS
+                    mPath.isRawFast() -> TYPE_RAWS
+                    mPath.isPortrait() -> TYPE_PORTRAITS
+                    else -> TYPE_IMAGES
                 }
+
+                val isFavorite = favoritesDB.isFavorite(mPath)
+                val duration = if (type == TYPE_VIDEOS) getDuration(mPath) ?: 0 else 0
+                val ts = System.currentTimeMillis()
+                val medium = Medium(
+                    null,
+                    mPath.getFilenameFromPath(),
+                    mPath,
+                    mPath.getParentPath(),
+                    ts,
+                    ts,
+                    File(mPath).length(),
+                    type,
+                    duration,
+                    isFavorite,
+                    0
+                )
+                mediaDB.insert(medium)
             }
         }
     }
@@ -404,9 +535,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     }
 
     private fun initFavorites() {
-        ensureBackgroundThread {
-            mFavoritePaths = getFavoritePaths()
-        }
+        mFavoritePaths = getFavoritePaths()
     }
 
     private fun setupOrientation() {
@@ -688,13 +817,11 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                 }
 
                 toast(R.string.saving)
-                ensureBackgroundThread {
-                    val photoFragment = getCurrentPhotoFragment() ?: return@ensureBackgroundThread
-                    saveRotatedImageToFile(currPath, newPath, photoFragment.mCurrentRotationDegrees, true) {
-                        toast(R.string.file_saved)
-                        getCurrentPhotoFragment()?.mCurrentRotationDegrees = 0
-                        invalidateOptionsMenu()
-                    }
+                val photoFragment = getCurrentPhotoFragment() ?: return@handleSAFDialog
+                saveRotatedImageToFile(currPath, newPath, photoFragment.mCurrentRotationDegrees, true) {
+                    toast(R.string.file_saved)
+                    getCurrentPhotoFragment()?.mCurrentRotationDegrees = 0
+                    invalidateOptionsMenu()
                 }
             }
         }
@@ -876,15 +1003,13 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     private fun toggleFavorite() {
         val medium = getCurrentMedium() ?: return
         medium.isFavorite = !medium.isFavorite
-        ensureBackgroundThread {
-            updateFavorite(medium.path, medium.isFavorite)
-            if (medium.isFavorite) {
-                mFavoritePaths.add(medium.path)
-            } else {
-                mFavoritePaths.remove(medium.path)
-            }
-            invalidateOptionsMenu()
+        updateFavorite(medium.path, medium.isFavorite)
+        if (medium.isFavorite) {
+            mFavoritePaths.add(medium.path)
+        } else {
+            mFavoritePaths.remove(medium.path)
         }
+        invalidateOptionsMenu()
     }
 
     private fun printFile() {
@@ -928,7 +1053,13 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                         return false
                     }
 
-                    override fun onResourceReady(bitmap: Bitmap?, model: Any?, target: Target<Bitmap>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                    override fun onResourceReady(
+                        bitmap: Bitmap?,
+                        model: Any?,
+                        target: Target<Bitmap>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
                         if (bitmap != null) {
                             printHelper.printBitmap(path.getFilenameFromPath(), bitmap)
                         }
@@ -951,30 +1082,28 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
         val oldPath = getCurrentPath()
         val originalSize = oldPath.getImageResolution() ?: return
         ResizeWithPathDialog(this, originalSize, oldPath) { newSize, newPath ->
-            ensureBackgroundThread {
-                try {
-                    var oldExif: ExifInterface? = null
-                    if (isNougatPlus()) {
-                        val inputStream = contentResolver.openInputStream(Uri.fromFile(File(oldPath)))
-                        oldExif = ExifInterface(inputStream!!)
-                    }
-
-                    val newBitmap = Glide.with(applicationContext).asBitmap().load(oldPath).submit(newSize.x, newSize.y).get()
-
-                    val newFile = File(newPath)
-                    val newFileDirItem = FileDirItem(newPath, newPath.getFilenameFromPath())
-                    getFileOutputStream(newFileDirItem, true) {
-                        if (it != null) {
-                            saveBitmap(newFile, newBitmap, it, oldExif, File(oldPath).lastModified())
-                        } else {
-                            toast(R.string.image_editing_failed)
-                        }
-                    }
-                } catch (e: OutOfMemoryError) {
-                    toast(R.string.out_of_memory_error)
-                } catch (e: Exception) {
-                    showErrorToast(e)
+            try {
+                var oldExif: ExifInterface? = null
+                if (isNougatPlus()) {
+                    val inputStream = contentResolver.openInputStream(Uri.fromFile(File(oldPath)))
+                    oldExif = ExifInterface(inputStream!!)
                 }
+
+                val newBitmap = Glide.with(applicationContext).asBitmap().load(oldPath).submit(newSize.x, newSize.y).get()
+
+                val newFile = File(newPath)
+                val newFileDirItem = FileDirItem(newPath, newPath.getFilenameFromPath())
+                getFileOutputStream(newFileDirItem, true) {
+                    if (it != null) {
+                        saveBitmap(newFile, newBitmap, it, oldExif, File(oldPath).lastModified())
+                    } else {
+                        toast(R.string.image_editing_failed)
+                    }
+                }
+            } catch (e: OutOfMemoryError) {
+                toast(R.string.out_of_memory_error)
+            } catch (e: Exception) {
+                showErrorToast(e)
             }
         }
     }
@@ -1096,9 +1225,7 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
                 name = it.getFilenameFromPath()
             }
 
-            ensureBackgroundThread {
-                updateDBMediaPath(oldPath, it)
-            }
+            updateDBMediaPath(oldPath, it)
             updateActionbarTitle()
         }
     }
@@ -1117,7 +1244,8 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     }
 
     private fun gotMedia(thumbnailItems: ArrayList<ThumbnailItem>, ignorePlayingVideos: Boolean = false) {
-        val media = thumbnailItems.asSequence().filter { it is Medium && !mIgnoredPaths.contains(it.path) }.map { it as Medium }.toMutableList() as ArrayList<Medium>
+        val media = thumbnailItems.asSequence().filter { it is Medium && !mIgnoredPaths.contains(it.path) }.map { it as Medium }
+            .toMutableList() as ArrayList<Medium>
         if (isDirEmpty(media) || media.hashCode() == mPrevHashcode) {
             return
         }
@@ -1163,7 +1291,10 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
 
     private fun deleteDirectoryIfEmpty() {
         val fileDirItem = FileDirItem(mDirectory, mDirectory.getFilenameFromPath(), File(mDirectory).isDirectory)
-        if (config.deleteEmptyFolders && !fileDirItem.isDownloadsFolder() && fileDirItem.isDirectory && fileDirItem.getProperFileCount(this, true) == 0) {
+        if (config.deleteEmptyFolders && !fileDirItem.isDownloadsFolder() && fileDirItem.isDirectory && fileDirItem.getProperFileCount(
+                this,
+                true
+            ) == 0) {
             tryDeleteFileDirItem(fileDirItem, true, true)
             scanPathRecursively(mDirectory)
         }
@@ -1217,28 +1348,26 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
     }
 
     override fun launchViewVideoIntent(path: String) {
-        ensureBackgroundThread {
-            val newUri = getFinalUriFromPath(path, BuildConfig.APPLICATION_ID) ?: return@ensureBackgroundThread
-            val mimeType = getUriMimeType(path, newUri)
-            Intent().apply {
-                action = Intent.ACTION_VIEW
-                setDataAndType(newUri, mimeType)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                putExtra(IS_FROM_GALLERY, true)
-                putExtra(REAL_FILE_PATH, path)
-                putExtra(SHOW_PREV_ITEM, view_pager.currentItem != 0)
-                putExtra(SHOW_NEXT_ITEM, view_pager.currentItem != mMediaFiles.size - 1)
+        val newUri = getFinalUriFromPath(path, BuildConfig.APPLICATION_ID) ?: return
+        val mimeType = getUriMimeType(path, newUri)
+        Intent().apply {
+            action = Intent.ACTION_VIEW
+            setDataAndType(newUri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            putExtra(IS_FROM_GALLERY, true)
+            putExtra(REAL_FILE_PATH, path)
+            putExtra(SHOW_PREV_ITEM, view_pager.currentItem != 0)
+            putExtra(SHOW_NEXT_ITEM, view_pager.currentItem != mMediaFiles.size - 1)
 
-                if (resolveActivity(packageManager) != null) {
-                    try {
-                        startActivityForResult(this, REQUEST_VIEW_VIDEO)
-                    } catch (e: NullPointerException) {
-                        showErrorToast(e)
-                    }
-                } else {
-                    if (!tryGenericMimeType(this, mimeType, newUri)) {
-                        toast(R.string.no_app_found)
-                    }
+            if (resolveActivity(packageManager) != null) {
+                try {
+                    startActivityForResult(this, REQUEST_VIEW_VIDEO)
+                } catch (e: NullPointerException) {
+                    showErrorToast(e)
+                }
+            } else {
+                if (!tryGenericMimeType(this, mimeType, newUri)) {
+                    toast(R.string.no_app_found)
                 }
             }
         }
@@ -1260,9 +1389,11 @@ class ViewPagerActivity : SimpleActivity(), ViewPager.OnPageChangeListener, View
             top_shadow.animate().alpha(newAlpha).start()
             if (bottom_actions.isVisible()) {
                 bottom_actions.animate().alpha(newAlpha).start()
-                arrayOf(bottom_favorite, bottom_edit, bottom_share, bottom_delete, bottom_rotate, bottom_properties, bottom_change_orientation,
+                arrayOf(
+                    bottom_favorite, bottom_edit, bottom_share, bottom_delete, bottom_rotate, bottom_properties, bottom_change_orientation,
                     bottom_slideshow, bottom_show_on_map, bottom_toggle_file_visibility, bottom_rename, bottom_set_as, bottom_copy, bottom_move,
-                    bottom_resize).forEach {
+                    bottom_resize
+                ).forEach {
                     it.isClickable = !mIsFullScreen
                 }
             }

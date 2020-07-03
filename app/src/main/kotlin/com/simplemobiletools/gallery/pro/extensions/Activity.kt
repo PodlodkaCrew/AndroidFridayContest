@@ -23,8 +23,53 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.simplemobiletools.commons.activities.BaseSimpleActivity
 import com.simplemobiletools.commons.dialogs.ConfirmationDialog
-import com.simplemobiletools.commons.extensions.*
-import com.simplemobiletools.commons.helpers.*
+import com.simplemobiletools.commons.extensions.deleteFile
+import com.simplemobiletools.commons.extensions.deleteFromMediaStore
+import com.simplemobiletools.commons.extensions.getCompressionFormat
+import com.simplemobiletools.commons.extensions.getDocumentFile
+import com.simplemobiletools.commons.extensions.getDoesFilePathExist
+import com.simplemobiletools.commons.extensions.getFileInputStreamSync
+import com.simplemobiletools.commons.extensions.getFileKey
+import com.simplemobiletools.commons.extensions.getFileOutputStream
+import com.simplemobiletools.commons.extensions.getFileOutputStreamSync
+import com.simplemobiletools.commons.extensions.getFileUri
+import com.simplemobiletools.commons.extensions.getFilenameFromPath
+import com.simplemobiletools.commons.extensions.getItemSize
+import com.simplemobiletools.commons.extensions.getMimeType
+import com.simplemobiletools.commons.extensions.getParentPath
+import com.simplemobiletools.commons.extensions.getSomeDocumentFile
+import com.simplemobiletools.commons.extensions.isJpg
+import com.simplemobiletools.commons.extensions.needsStupidWritePermissions
+import com.simplemobiletools.commons.extensions.openEditorIntent
+import com.simplemobiletools.commons.extensions.openPathIntent
+import com.simplemobiletools.commons.extensions.renameFile
+import com.simplemobiletools.commons.extensions.rescanPaths
+import com.simplemobiletools.commons.extensions.saveExifRotation
+import com.simplemobiletools.commons.extensions.saveImageRotation
+import com.simplemobiletools.commons.extensions.scanPathRecursively
+import com.simplemobiletools.commons.extensions.setAsIntent
+import com.simplemobiletools.commons.extensions.sharePathIntent
+import com.simplemobiletools.commons.extensions.sharePathsIntent
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.showLocationOnMap
+import com.simplemobiletools.commons.extensions.toFileDirItem
+import com.simplemobiletools.commons.extensions.toast
+import com.simplemobiletools.commons.extensions.updateLastModified
+import com.simplemobiletools.commons.helpers.LICENSE_CROPPER
+import com.simplemobiletools.commons.helpers.LICENSE_EXOPLAYER
+import com.simplemobiletools.commons.helpers.LICENSE_FILTERS
+import com.simplemobiletools.commons.helpers.LICENSE_GESTURE_VIEWS
+import com.simplemobiletools.commons.helpers.LICENSE_GIF_DRAWABLE
+import com.simplemobiletools.commons.helpers.LICENSE_GLIDE
+import com.simplemobiletools.commons.helpers.LICENSE_PANORAMA_VIEW
+import com.simplemobiletools.commons.helpers.LICENSE_PATTERN
+import com.simplemobiletools.commons.helpers.LICENSE_PICASSO
+import com.simplemobiletools.commons.helpers.LICENSE_REPRINT
+import com.simplemobiletools.commons.helpers.LICENSE_RTL
+import com.simplemobiletools.commons.helpers.LICENSE_SANSELAN
+import com.simplemobiletools.commons.helpers.LICENSE_SUBSAMPLING
+import com.simplemobiletools.commons.helpers.NOMEDIA
+import com.simplemobiletools.commons.helpers.isNougatPlus
 import com.simplemobiletools.commons.models.FAQItem
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.gallery.pro.BuildConfig
@@ -39,7 +84,9 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.ArrayList
+import java.util.HashMap
+import java.util.Locale
 
 fun Activity.sharePath(path: String) {
     sharePathIntent(path, BuildConfig.APPLICATION_ID)
@@ -80,8 +127,9 @@ fun Activity.launchCamera() {
 }
 
 fun SimpleActivity.launchAbout() {
-    val licenses = LICENSE_GLIDE or LICENSE_CROPPER or LICENSE_RTL or LICENSE_SUBSAMPLING or LICENSE_PATTERN or LICENSE_REPRINT or LICENSE_GIF_DRAWABLE or
-            LICENSE_PICASSO or LICENSE_EXOPLAYER or LICENSE_PANORAMA_VIEW or LICENSE_SANSELAN or LICENSE_FILTERS or LICENSE_GESTURE_VIEWS
+    val licenses =
+        LICENSE_GLIDE or LICENSE_CROPPER or LICENSE_RTL or LICENSE_SUBSAMPLING or LICENSE_PATTERN or LICENSE_REPRINT or LICENSE_GIF_DRAWABLE or
+                LICENSE_PICASSO or LICENSE_EXOPLAYER or LICENSE_PANORAMA_VIEW or LICENSE_SANSELAN or LICENSE_FILTERS or LICENSE_GESTURE_VIEWS
 
     val faqItems = arrayListOf(
         FAQItem(R.string.faq_5_title_commons, R.string.faq_5_text_commons),
@@ -101,7 +149,8 @@ fun SimpleActivity.launchAbout() {
         FAQItem(R.string.faq_15_title, R.string.faq_15_text),
         FAQItem(R.string.faq_2_title_commons, R.string.faq_2_text_commons),
         FAQItem(R.string.faq_6_title_commons, R.string.faq_6_text_commons),
-        FAQItem(R.string.faq_7_title_commons, R.string.faq_7_text_commons))
+        FAQItem(R.string.faq_7_title_commons, R.string.faq_7_text_commons)
+    )
 
     startAboutActivity(R.string.app_name, licenses, BuildConfig.VERSION_NAME, faqItems, true)
 }
@@ -157,7 +206,7 @@ fun BaseSimpleActivity.addNoMedia(path: String, callback: () -> Unit) {
     } else {
         try {
             if (file.createNewFile()) {
-                rescanFolderMedia(file.absolutePath)
+                rescanFolderMediaSync(file.absolutePath)
             } else {
                 toast(R.string.unknown_error_occurred)
             }
@@ -178,7 +227,7 @@ fun BaseSimpleActivity.removeNoMedia(path: String, callback: (() -> Unit)? = nul
     tryDeleteFileDirItem(file.toFileDirItem(applicationContext), false, false) {
         callback?.invoke()
         deleteFromMediaStore(file.absolutePath)
-        rescanFolderMedia(path)
+        rescanFolderMediaSync(path)
     }
 }
 
@@ -199,13 +248,15 @@ fun BaseSimpleActivity.toggleFileVisibility(oldPath: String, hide: Boolean, call
     val newPath = "$path/$filename"
     renameFile(oldPath, newPath) {
         callback?.invoke(newPath)
-        ensureBackgroundThread {
-            updateDBMediaPath(oldPath, newPath)
-        }
+        updateDBMediaPath(oldPath, newPath)
     }
 }
 
-fun BaseSimpleActivity.tryCopyMoveFilesTo(fileDirItems: ArrayList<FileDirItem>, isCopyOperation: Boolean, callback: (destinationPath: String) -> Unit) {
+fun BaseSimpleActivity.tryCopyMoveFilesTo(
+    fileDirItems: ArrayList<FileDirItem>,
+    isCopyOperation: Boolean,
+    callback: (destinationPath: String) -> Unit
+) {
     if (fileDirItems.isEmpty()) {
         toast(R.string.unknown_error_occurred)
         return
@@ -222,15 +273,17 @@ fun BaseSimpleActivity.tryCopyMoveFilesTo(fileDirItems: ArrayList<FileDirItem>, 
     }
 }
 
-fun BaseSimpleActivity.tryDeleteFileDirItem(fileDirItem: FileDirItem, allowDeleteFolder: Boolean = false, deleteFromDatabase: Boolean,
-                                            callback: ((wasSuccess: Boolean) -> Unit)? = null) {
+fun BaseSimpleActivity.tryDeleteFileDirItem(
+    fileDirItem: FileDirItem,
+    allowDeleteFolder: Boolean = false,
+    deleteFromDatabase: Boolean,
+    callback: ((wasSuccess: Boolean) -> Unit)? = null
+) {
     deleteFile(fileDirItem, allowDeleteFolder) {
         if (deleteFromDatabase) {
-            ensureBackgroundThread {
-                deleteDBPath(fileDirItem.path)
-                runOnUiThread {
-                    callback?.invoke(it)
-                }
+            deleteDBPath(fileDirItem.path)
+            runOnUiThread {
+                callback?.invoke(it)
             }
         } else {
             callback?.invoke(it)
@@ -239,86 +292,18 @@ fun BaseSimpleActivity.tryDeleteFileDirItem(fileDirItem: FileDirItem, allowDelet
 }
 
 fun BaseSimpleActivity.movePathsInRecycleBin(paths: ArrayList<String>, callback: ((wasSuccess: Boolean) -> Unit)?) {
-    ensureBackgroundThread {
-        var pathsCnt = paths.size
-        val OTGPath = config.OTGPath
+    var pathsCnt = paths.size
+    val OTGPath = config.OTGPath
 
-        for (source in paths) {
-            if (OTGPath.isNotEmpty() && source.startsWith(OTGPath)) {
-                var inputStream: InputStream? = null
-                var out: OutputStream? = null
-                try {
-                    val destination = "$recycleBinPath/$source"
-                    val fileDocument = getSomeDocumentFile(source)
-                    inputStream = applicationContext.contentResolver.openInputStream(fileDocument?.uri!!)
-                    out = getFileOutputStreamSync(destination, source.getMimeType())
-
-                    var copiedSize = 0L
-                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                    var bytes = inputStream!!.read(buffer)
-                    while (bytes >= 0) {
-                        out!!.write(buffer, 0, bytes)
-                        copiedSize += bytes
-                        bytes = inputStream.read(buffer)
-                    }
-
-                    out?.flush()
-
-                    if (fileDocument?.getItemSize(true) == copiedSize && getDoesFilePathExist(destination)) {
-                        mediaDB.updateDeleted("$RECYCLE_BIN$source", System.currentTimeMillis(), source)
-                        pathsCnt--
-                    }
-                } catch (e: Exception) {
-                    showErrorToast(e)
-                    return@ensureBackgroundThread
-                } finally {
-                    inputStream?.close()
-                    out?.close()
-                }
-            } else {
-                val file = File(source)
-                val internalFile = File(recycleBinPath, source)
-                val lastModified = file.lastModified()
-                try {
-                    if (file.copyRecursively(internalFile, true)) {
-                        mediaDB.updateDeleted("$RECYCLE_BIN$source", System.currentTimeMillis(), source)
-                        pathsCnt--
-
-                        if (config.keepLastModified) {
-                            internalFile.setLastModified(lastModified)
-                        }
-                    }
-                } catch (e: Exception) {
-                    showErrorToast(e)
-                    return@ensureBackgroundThread
-                }
-            }
-        }
-        callback?.invoke(pathsCnt == 0)
-    }
-}
-
-fun BaseSimpleActivity.restoreRecycleBinPath(path: String, callback: () -> Unit) {
-    restoreRecycleBinPaths(arrayListOf(path), callback)
-}
-
-fun BaseSimpleActivity.restoreRecycleBinPaths(paths: ArrayList<String>, callback: () -> Unit) {
-    ensureBackgroundThread {
-        val newPaths = ArrayList<String>()
-        for (source in paths) {
-            val destination = source.removePrefix(recycleBinPath)
-            val lastModified = File(source).lastModified()
-
-            val isShowingSAF = handleSAFDialog(destination) {}
-            if (isShowingSAF) {
-                return@ensureBackgroundThread
-            }
-
+    for (source in paths) {
+        if (OTGPath.isNotEmpty() && source.startsWith(OTGPath)) {
             var inputStream: InputStream? = null
             var out: OutputStream? = null
             try {
+                val destination = "$recycleBinPath/$source"
+                val fileDocument = getSomeDocumentFile(source)
+                inputStream = applicationContext.contentResolver.openInputStream(fileDocument?.uri!!)
                 out = getFileOutputStreamSync(destination, source.getMimeType())
-                inputStream = getFileInputStreamSync(source)
 
                 var copiedSize = 0L
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
@@ -331,52 +316,112 @@ fun BaseSimpleActivity.restoreRecycleBinPaths(paths: ArrayList<String>, callback
 
                 out?.flush()
 
-                if (File(source).length() == copiedSize) {
-                    mediaDB.updateDeleted(destination.removePrefix(recycleBinPath), 0, "$RECYCLE_BIN$destination")
-                }
-                newPaths.add(destination)
-
-                if (config.keepLastModified) {
-                    File(destination).setLastModified(lastModified)
+                if (fileDocument?.getItemSize(true) == copiedSize && getDoesFilePathExist(destination)) {
+                    mediaDB.updateDeleted("$RECYCLE_BIN$source", System.currentTimeMillis(), source)
+                    pathsCnt--
                 }
             } catch (e: Exception) {
                 showErrorToast(e)
+                return
             } finally {
                 inputStream?.close()
                 out?.close()
             }
+        } else {
+            val file = File(source)
+            val internalFile = File(recycleBinPath, source)
+            val lastModified = file.lastModified()
+            try {
+                if (file.copyRecursively(internalFile, true)) {
+                    mediaDB.updateDeleted("$RECYCLE_BIN$source", System.currentTimeMillis(), source)
+                    pathsCnt--
+
+                    if (config.keepLastModified) {
+                        internalFile.setLastModified(lastModified)
+                    }
+                }
+            } catch (e: Exception) {
+                showErrorToast(e)
+                return
+            }
+        }
+    }
+    callback?.invoke(pathsCnt == 0)
+}
+
+fun BaseSimpleActivity.restoreRecycleBinPath(path: String, callback: () -> Unit) {
+    restoreRecycleBinPaths(arrayListOf(path), callback)
+}
+
+fun BaseSimpleActivity.restoreRecycleBinPaths(paths: ArrayList<String>, callback: () -> Unit) {
+    val newPaths = ArrayList<String>()
+    for (source in paths) {
+        val destination = source.removePrefix(recycleBinPath)
+        val lastModified = File(source).lastModified()
+
+        val isShowingSAF = handleSAFDialog(destination) {}
+        if (isShowingSAF) {
+            return
         }
 
-        runOnUiThread {
-            callback()
-        }
+        var inputStream: InputStream? = null
+        var out: OutputStream? = null
+        try {
+            out = getFileOutputStreamSync(destination, source.getMimeType())
+            inputStream = getFileInputStreamSync(source)
 
-        rescanPaths(newPaths) {
-            fixDateTaken(newPaths, false)
+            var copiedSize = 0L
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var bytes = inputStream!!.read(buffer)
+            while (bytes >= 0) {
+                out!!.write(buffer, 0, bytes)
+                copiedSize += bytes
+                bytes = inputStream.read(buffer)
+            }
+
+            out?.flush()
+
+            if (File(source).length() == copiedSize) {
+                mediaDB.updateDeleted(destination.removePrefix(recycleBinPath), 0, "$RECYCLE_BIN$destination")
+            }
+            newPaths.add(destination)
+
+            if (config.keepLastModified) {
+                File(destination).setLastModified(lastModified)
+            }
+        } catch (e: Exception) {
+            showErrorToast(e)
+        } finally {
+            inputStream?.close()
+            out?.close()
         }
+    }
+
+    runOnUiThread {
+        callback()
+    }
+
+    rescanPaths(newPaths) {
+        fixDateTaken(newPaths, false)
     }
 }
 
 fun BaseSimpleActivity.emptyTheRecycleBin(callback: (() -> Unit)? = null) {
-    ensureBackgroundThread {
-        try {
-            recycleBin.deleteRecursively()
-            mediaDB.clearRecycleBin()
-            directoryDao.deleteRecycleBin()
-            toast(R.string.recycle_bin_emptied)
-            callback?.invoke()
-        } catch (e: Exception) {
-            toast(R.string.unknown_error_occurred)
-        }
+    try {
+        recycleBin.deleteRecursively()
+        mediaDB.clearRecycleBin()
+        directoryDao.deleteRecycleBin()
+        toast(R.string.recycle_bin_emptied)
+        callback?.invoke()
+    } catch (e: Exception) {
+        toast(R.string.unknown_error_occurred)
     }
 }
 
 fun BaseSimpleActivity.emptyAndDisableTheRecycleBin(callback: () -> Unit) {
-    ensureBackgroundThread {
-        emptyTheRecycleBin {
-            config.useRecycleBin = false
-            callback()
-        }
+    emptyTheRecycleBin {
+        config.useRecycleBin = false
+        callback()
     }
 }
 
@@ -387,11 +432,9 @@ fun BaseSimpleActivity.showRecycleBinEmptyingDialog(callback: () -> Unit) {
 }
 
 fun BaseSimpleActivity.updateFavoritePaths(fileDirItems: ArrayList<FileDirItem>, destination: String) {
-    ensureBackgroundThread {
-        fileDirItems.forEach {
-            val newPath = "$destination/${it.name}"
-            updateDBMediaPath(it.path, newPath)
-        }
+    fileDirItems.forEach {
+        val newPath = "$destination/${it.name}"
+        updateDBMediaPath(it.path, newPath)
     }
 }
 
@@ -418,77 +461,76 @@ fun Activity.fixDateTaken(paths: ArrayList<String>, showToasts: Boolean, hasResc
         var didUpdateFile = false
         val operations = ArrayList<ContentProviderOperation>()
 
-        ensureBackgroundThread {
-            val dateTakens = ArrayList<DateTaken>()
+        val dateTakens = ArrayList<DateTaken>()
 
-            for (path in paths) {
-                val dateTime = ExifInterface(path).getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+        for (path in paths) {
+            val dateTime = ExifInterface(path).getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
                     ?: ExifInterface(path).getAttribute(ExifInterface.TAG_DATETIME) ?: continue
 
-                // some formats contain a "T" in the middle, some don't
-                // sample dates: 2015-07-26T14:55:23, 2018:09:05 15:09:05
-                val t = if (dateTime.substring(10, 11) == "T") "\'T\'" else " "
-                val separator = dateTime.substring(4, 5)
-                val format = "yyyy${separator}MM${separator}dd${t}kk:mm:ss"
-                val formatter = SimpleDateFormat(format, Locale.getDefault())
-                val timestamp = formatter.parse(dateTime).time
+            // some formats contain a "T" in the middle, some don't
+            // sample dates: 2015-07-26T14:55:23, 2018:09:05 15:09:05
+            val t = if (dateTime.substring(10, 11) == "T") "\'T\'" else " "
+            val separator = dateTime.substring(4, 5)
+            val format = "yyyy${separator}MM${separator}dd${t}kk:mm:ss"
+            val formatter = SimpleDateFormat(format, Locale.getDefault())
+            val timestamp = formatter.parse(dateTime).time
 
-                val uri = getFileUri(path)
-                ContentProviderOperation.newUpdate(uri).apply {
-                    val selection = "${Images.Media.DATA} = ?"
-                    val selectionArgs = arrayOf(path)
-                    withSelection(selection, selectionArgs)
-                    withValue(Images.Media.DATE_TAKEN, timestamp)
-                    operations.add(build())
-                }
-
-                if (operations.size % BATCH_SIZE == 0) {
-                    contentResolver.applyBatch(MediaStore.AUTHORITY, operations)
-                    operations.clear()
-                }
-
-                mediaDB.updateFavoriteDateTaken(path, timestamp)
-                didUpdateFile = true
-
-                val dateTaken = DateTaken(null, path, path.getFilenameFromPath(), path.getParentPath(), timestamp, (System.currentTimeMillis() / 1000).toInt())
-                dateTakens.add(dateTaken)
-                if (!hasRescanned && getFileDateTaken(path) == 0L) {
-                    pathsToRescan.add(path)
-                }
+            val uri = getFileUri(path)
+            ContentProviderOperation.newUpdate(uri).apply {
+                val selection = "${Images.Media.DATA} = ?"
+                val selectionArgs = arrayOf(path)
+                withSelection(selection, selectionArgs)
+                withValue(Images.Media.DATE_TAKEN, timestamp)
+                operations.add(build())
             }
 
-            if (!didUpdateFile) {
+            if (operations.size % BATCH_SIZE == 0) {
+                contentResolver.applyBatch(MediaStore.AUTHORITY, operations)
+                operations.clear()
+            }
+
+            mediaDB.updateFavoriteDateTaken(path, timestamp)
+            didUpdateFile = true
+
+            val dateTaken =
+                DateTaken(null, path, path.getFilenameFromPath(), path.getParentPath(), timestamp, (System.currentTimeMillis() / 1000).toInt())
+            dateTakens.add(dateTaken)
+            if (!hasRescanned && getFileDateTaken(path) == 0L) {
+                pathsToRescan.add(path)
+            }
+        }
+
+        if (!didUpdateFile) {
+            if (showToasts) {
+                toast(R.string.no_date_takens_found)
+            }
+
+            runOnUiThread {
+                callback?.invoke()
+            }
+            return
+        }
+
+        val resultSize = contentResolver.applyBatch(MediaStore.AUTHORITY, operations).size
+        if (resultSize == 0) {
+            didUpdateFile = false
+        }
+
+        if (hasRescanned || pathsToRescan.isEmpty()) {
+            if (dateTakens.isNotEmpty()) {
+                dateTakensDB.insertAll(dateTakens)
+            }
+
+            runOnUiThread {
                 if (showToasts) {
-                    toast(R.string.no_date_takens_found)
+                    toast(if (didUpdateFile) R.string.dates_fixed_successfully else R.string.unknown_error_occurred)
                 }
 
-                runOnUiThread {
-                    callback?.invoke()
-                }
-                return@ensureBackgroundThread
+                callback?.invoke()
             }
-
-            val resultSize = contentResolver.applyBatch(MediaStore.AUTHORITY, operations).size
-            if (resultSize == 0) {
-                didUpdateFile = false
-            }
-
-            if (hasRescanned || pathsToRescan.isEmpty()) {
-                if (dateTakens.isNotEmpty()) {
-                    dateTakensDB.insertAll(dateTakens)
-                }
-
-                runOnUiThread {
-                    if (showToasts) {
-                        toast(if (didUpdateFile) R.string.dates_fixed_successfully else R.string.unknown_error_occurred)
-                    }
-
-                    callback?.invoke()
-                }
-            } else {
-                rescanPaths(pathsToRescan) {
-                    fixDateTaken(paths, showToasts, true)
-                }
+        } else {
+            rescanPaths(pathsToRescan) {
+                fixDateTaken(paths, showToasts, true)
             }
         }
     } catch (e: Exception) {
@@ -613,29 +655,27 @@ fun saveFile(path: String, bitmap: Bitmap, out: FileOutputStream, degrees: Int) 
 }
 
 fun Activity.getShortcutImage(tmb: String, drawable: Drawable, callback: () -> Unit) {
-    ensureBackgroundThread {
-        val options = RequestOptions()
-            .format(DecodeFormat.PREFER_ARGB_8888)
-            .skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .fitCenter()
+    val options = RequestOptions()
+        .format(DecodeFormat.PREFER_ARGB_8888)
+        .skipMemoryCache(true)
+        .diskCacheStrategy(DiskCacheStrategy.NONE)
+        .fitCenter()
 
-        val size = resources.getDimension(R.dimen.shortcut_size).toInt()
-        val builder = Glide.with(this)
-            .asDrawable()
-            .load(tmb)
-            .apply(options)
-            .centerCrop()
-            .into(size, size)
+    val size = resources.getDimension(R.dimen.shortcut_size).toInt()
+    val builder = Glide.with(this)
+        .asDrawable()
+        .load(tmb)
+        .apply(options)
+        .centerCrop()
+        .into(size, size)
 
-        try {
-            (drawable as LayerDrawable).setDrawableByLayerId(R.id.shortcut_image, builder.get())
-        } catch (e: Exception) {
-        }
+    try {
+        (drawable as LayerDrawable).setDrawableByLayerId(R.id.shortcut_image, builder.get())
+    } catch (e: Exception) {
+    }
 
-        runOnUiThread {
-            callback()
-        }
+    runOnUiThread {
+        callback()
     }
 }
 

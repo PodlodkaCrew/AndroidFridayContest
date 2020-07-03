@@ -12,9 +12,23 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.util.DisplayMetrics
-import android.view.*
+import android.view.GestureDetector
+import android.view.Menu
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.Surface
+import android.view.TextureView
+import android.view.View
+import android.view.WindowManager
 import android.widget.SeekBar
-import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.ExoPlaybackException
+import com.google.android.exoplayer2.ExoPlayerFactory
+import com.google.android.exoplayer2.PlaybackParameters
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.SeekParameters
+import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
 import com.google.android.exoplayer2.source.ExtractorMediaSource
 import com.google.android.exoplayer2.source.TrackGroupArray
@@ -23,11 +37,36 @@ import com.google.android.exoplayer2.upstream.ContentDataSource
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.video.VideoListener
-import com.simplemobiletools.commons.extensions.*
-import com.simplemobiletools.commons.helpers.ensureBackgroundThread
+import com.simplemobiletools.commons.extensions.actionBarHeight
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.getFilenameFromUri
+import com.simplemobiletools.commons.extensions.getFormattedDuration
+import com.simplemobiletools.commons.extensions.navigationBarHeight
+import com.simplemobiletools.commons.extensions.navigationBarWidth
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.statusBarHeight
+import com.simplemobiletools.commons.extensions.updateTextColors
 import com.simplemobiletools.gallery.pro.R
-import com.simplemobiletools.gallery.pro.extensions.*
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.hasNavBar
+import com.simplemobiletools.gallery.pro.extensions.hideSystemUI
+import com.simplemobiletools.gallery.pro.extensions.openPath
+import com.simplemobiletools.gallery.pro.extensions.shareMediumPath
+import com.simplemobiletools.gallery.pro.extensions.showSystemUI
+import com.simplemobiletools.gallery.pro.helpers.DRAG_THRESHOLD
+import com.simplemobiletools.gallery.pro.helpers.FAST_FORWARD_VIDEO_MS
+import com.simplemobiletools.gallery.pro.helpers.GO_TO_NEXT_ITEM
+import com.simplemobiletools.gallery.pro.helpers.GO_TO_PREV_ITEM
+import com.simplemobiletools.gallery.pro.helpers.HIDE_SYSTEM_UI_DELAY
+import com.simplemobiletools.gallery.pro.helpers.MAX_CLOSE_DOWN_GESTURE_DURATION
+import com.simplemobiletools.gallery.pro.helpers.ROTATE_BY_ASPECT_RATIO
+import com.simplemobiletools.gallery.pro.helpers.ROTATE_BY_DEVICE_ROTATION
+import com.simplemobiletools.gallery.pro.helpers.ROTATE_BY_SYSTEM_SETTING
+import com.simplemobiletools.gallery.pro.helpers.SHOW_NEXT_ITEM
+import com.simplemobiletools.gallery.pro.helpers.SHOW_PREV_ITEM
 import kotlinx.android.synthetic.main.activity_video_player.*
 import kotlinx.android.synthetic.main.bottom_video_time_holder.*
 
@@ -161,7 +200,6 @@ open class VideoPlayerActivity : SimpleActivity(), SeekBar.OnSeekBarChangeListen
 
         video_prev_file.beVisibleIf(intent.getBooleanExtra(SHOW_PREV_ITEM, false))
         video_prev_file.setOnClickListener { handlePrevFile() }
-
 
         val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent?): Boolean {
@@ -443,7 +481,16 @@ open class VideoPlayerActivity : SimpleActivity(), SeekBar.OnSeekBarChangeListen
         }
 
         val newAlpha = if (isFullScreen) 0f else 1f
-        arrayOf(video_prev_file, video_toggle_play_pause, video_next_file, video_curr_time, video_seekbar, video_duration, top_shadow, video_bottom_gradient).forEach {
+        arrayOf(
+            video_prev_file,
+            video_toggle_play_pause,
+            video_next_file,
+            video_curr_time,
+            video_seekbar,
+            video_duration,
+            top_shadow,
+            video_bottom_gradient
+        ).forEach {
             it.animate().alpha(newAlpha).start()
         }
         video_seekbar.setOnSeekBarChangeListener(if (mIsFullscreen) null else this)
@@ -540,8 +587,8 @@ open class VideoPlayerActivity : SimpleActivity(), SeekBar.OnSeekBarChangeListen
 
                 val downGestureDuration = System.currentTimeMillis() - mTouchDownTime
                 if (config.allowDownGesture && !mIgnoreCloseDown && Math.abs(diffY) > Math.abs(diffX) && diffY < -mCloseDownThreshold &&
-                        downGestureDuration < MAX_CLOSE_DOWN_GESTURE_DURATION &&
-                        video_surface_frame.controller.state.zoom == 1f) {
+                    downGestureDuration < MAX_CLOSE_DOWN_GESTURE_DURATION &&
+                    video_surface_frame.controller.state.zoom == 1f) {
                     supportFinishAfterTransition()
                 }
 
@@ -588,10 +635,8 @@ open class VideoPlayerActivity : SimpleActivity(), SeekBar.OnSeekBarChangeListen
 
     private fun releaseExoPlayer() {
         mExoPlayer?.stop()
-        ensureBackgroundThread {
-            mExoPlayer?.release()
-            mExoPlayer = null
-        }
+        mExoPlayer?.release()
+        mExoPlayer = null
     }
 
     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -624,9 +669,7 @@ open class VideoPlayerActivity : SimpleActivity(), SeekBar.OnSeekBarChangeListen
     override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?) = false
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
-        ensureBackgroundThread {
-            mExoPlayer?.setVideoSurface(Surface(video_surface!!.surfaceTexture))
-        }
+        mExoPlayer?.setVideoSurface(Surface(video_surface!!.surfaceTexture))
     }
 
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {}

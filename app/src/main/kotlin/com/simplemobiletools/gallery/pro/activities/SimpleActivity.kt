@@ -89,9 +89,7 @@ open class SimpleActivity : BaseSimpleActivity() {
             config.lastFilepickerPath = it
             config.addIncludedFolder(it)
             callback()
-            ensureBackgroundThread {
-                scanPathRecursively(it)
-            }
+            scanPathRecursively(it)
         }
     }
 }
