@@ -91,9 +91,7 @@ class WidgetConfigureActivity : SimpleActivity() {
         AppWidgetManager.getInstance(this).updateAppWidget(mWidgetId, views)
         config.showWidgetFolderName = folder_picker_show_folder_name.isChecked
         val widget = Widget(null, mWidgetId, mFolderPath)
-        ensureBackgroundThread {
-            widgetsDB.insertOrUpdate(widget)
-        }
+        widgetsDB.insertOrUpdate(widget)
 
         storeWidgetColors()
         requestWidgetUpdate()
@@ -163,12 +161,10 @@ class WidgetConfigureActivity : SimpleActivity() {
             config_folder_name.text = getFolderNameFromPath(folderPath)
         }
 
-        ensureBackgroundThread {
-            val path = directoryDao.getDirectoryThumbnail(folderPath)
-            if (path != null) {
-                runOnUiThread {
-                    loadJpg(path, config_image, config.cropThumbnails)
-                }
+        val path = directoryDao.getDirectoryThumbnail(folderPath)
+        if (path != null) {
+            runOnUiThread {
+                loadJpg(path, config_image, config.cropThumbnails)
             }
         }
     }

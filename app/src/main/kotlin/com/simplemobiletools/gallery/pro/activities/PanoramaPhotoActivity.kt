@@ -85,7 +85,6 @@ open class PanoramaPhotoActivity : SimpleActivity() {
         try {
             val options = VrPanoramaView.Options()
             options.inputType = VrPanoramaView.Options.TYPE_MONO
-            ensureBackgroundThread {
                 val bitmap = getBitmapToLoad(path)
                 runOnUiThread {
                     panorama_view.apply {
@@ -110,7 +109,6 @@ open class PanoramaPhotoActivity : SimpleActivity() {
                             }
                         })
                     }
-                }
             }
         } catch (e: Exception) {
             showErrorToast(e)

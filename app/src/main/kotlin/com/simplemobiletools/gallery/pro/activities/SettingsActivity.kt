@@ -591,7 +591,6 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupEmptyRecycleBin() {
-        ensureBackgroundThread {
             try {
                 mRecycleBinContentSize = mediaDB.getDeletedMedia().sumByLong { it.size }
             } catch (ignored: Exception) {
@@ -599,7 +598,6 @@ class SettingsActivity : SimpleActivity() {
             runOnUiThread {
                 settings_empty_recycle_bin_size.text = mRecycleBinContentSize.formatSize()
             }
-        }
 
         settings_empty_recycle_bin_holder.setOnClickListener {
             if (mRecycleBinContentSize == 0L) {
@@ -712,9 +710,7 @@ class SettingsActivity : SimpleActivity() {
                 handlePermission(PERMISSION_READ_STORAGE) {
                     if (it) {
                         FilePickerDialog(this) {
-                            ensureBackgroundThread {
                                 parseFile(File(it).inputStream())
-                            }
                         }
                     }
                 }

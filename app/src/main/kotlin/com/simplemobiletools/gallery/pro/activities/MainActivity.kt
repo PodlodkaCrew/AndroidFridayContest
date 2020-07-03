@@ -24,8 +24,55 @@ import com.simplemobiletools.commons.dialogs.ConfirmationDialog
 import com.simplemobiletools.commons.dialogs.CreateNewFolderDialog
 import com.simplemobiletools.commons.dialogs.FilePickerDialog
 import com.simplemobiletools.commons.dialogs.NewAppsIconsDialog
-import com.simplemobiletools.commons.extensions.*
-import com.simplemobiletools.commons.helpers.*
+import com.simplemobiletools.commons.extensions.appLaunched
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beGoneIf
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.checkWhatsNew
+import com.simplemobiletools.commons.extensions.deleteFiles
+import com.simplemobiletools.commons.extensions.getAdjustedPrimaryColor
+import com.simplemobiletools.commons.extensions.getDoesFilePathExist
+import com.simplemobiletools.commons.extensions.getFileCount
+import com.simplemobiletools.commons.extensions.getFilePublicUri
+import com.simplemobiletools.commons.extensions.getFilenameFromPath
+import com.simplemobiletools.commons.extensions.getLatestMediaByDateId
+import com.simplemobiletools.commons.extensions.getLatestMediaId
+import com.simplemobiletools.commons.extensions.getMimeType
+import com.simplemobiletools.commons.extensions.getProperSize
+import com.simplemobiletools.commons.extensions.getStorageDirectories
+import com.simplemobiletools.commons.extensions.getTimeFormat
+import com.simplemobiletools.commons.extensions.handleAppPasswordProtection
+import com.simplemobiletools.commons.extensions.handleHiddenFolderPasswordProtection
+import com.simplemobiletools.commons.extensions.handleLockedFolderOpening
+import com.simplemobiletools.commons.extensions.hasOTGConnected
+import com.simplemobiletools.commons.extensions.hasPermission
+import com.simplemobiletools.commons.extensions.internalStoragePath
+import com.simplemobiletools.commons.extensions.isGif
+import com.simplemobiletools.commons.extensions.isGone
+import com.simplemobiletools.commons.extensions.isImageFast
+import com.simplemobiletools.commons.extensions.isMediaFile
+import com.simplemobiletools.commons.extensions.isPackageInstalled
+import com.simplemobiletools.commons.extensions.isPathOnOTG
+import com.simplemobiletools.commons.extensions.isRawFast
+import com.simplemobiletools.commons.extensions.isSvg
+import com.simplemobiletools.commons.extensions.isVideoFast
+import com.simplemobiletools.commons.extensions.isVisible
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.sdCardPath
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.toFileDirItem
+import com.simplemobiletools.commons.extensions.toast
+import com.simplemobiletools.commons.extensions.underlineText
+import com.simplemobiletools.commons.helpers.DAY_SECONDS
+import com.simplemobiletools.commons.helpers.PERMISSION_READ_STORAGE
+import com.simplemobiletools.commons.helpers.PERMISSION_WRITE_STORAGE
+import com.simplemobiletools.commons.helpers.SORT_BY_DATE_MODIFIED
+import com.simplemobiletools.commons.helpers.SORT_BY_DATE_TAKEN
+import com.simplemobiletools.commons.helpers.SORT_BY_SIZE
+import com.simplemobiletools.commons.helpers.SORT_USE_NUMERIC_VALUE
+import com.simplemobiletools.commons.helpers.WAS_PROTECTION_HANDLED
+import com.simplemobiletools.commons.helpers.isNougatPlus
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.commons.models.Release
 import com.simplemobiletools.commons.views.MyGridLayoutManager
@@ -37,16 +84,68 @@ import com.simplemobiletools.gallery.pro.databases.GalleryDatabase
 import com.simplemobiletools.gallery.pro.dialogs.ChangeSortingDialog
 import com.simplemobiletools.gallery.pro.dialogs.ChangeViewTypeDialog
 import com.simplemobiletools.gallery.pro.dialogs.FilterMediaDialog
-import com.simplemobiletools.gallery.pro.extensions.*
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.extensions.addTempFolderIfNeeded
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.createDirectoryFromMedia
+import com.simplemobiletools.gallery.pro.extensions.deleteDBPath
+import com.simplemobiletools.gallery.pro.extensions.directoryDao
+import com.simplemobiletools.gallery.pro.extensions.getCachedDirectories
+import com.simplemobiletools.gallery.pro.extensions.getCachedMedia
+import com.simplemobiletools.gallery.pro.extensions.getDirectorySortingValue
+import com.simplemobiletools.gallery.pro.extensions.getDirsToShow
+import com.simplemobiletools.gallery.pro.extensions.getDistinctPath
+import com.simplemobiletools.gallery.pro.extensions.getFavoritePaths
+import com.simplemobiletools.gallery.pro.extensions.getOTGFolderChildrenNames
+import com.simplemobiletools.gallery.pro.extensions.getSortedDirectories
+import com.simplemobiletools.gallery.pro.extensions.isDownloadsFolder
+import com.simplemobiletools.gallery.pro.extensions.launchAbout
+import com.simplemobiletools.gallery.pro.extensions.launchCamera
+import com.simplemobiletools.gallery.pro.extensions.launchSettings
+import com.simplemobiletools.gallery.pro.extensions.mediaDB
+import com.simplemobiletools.gallery.pro.extensions.movePathsInRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.movePinnedDirectoriesToFront
+import com.simplemobiletools.gallery.pro.extensions.removeInvalidDBDirectories
+import com.simplemobiletools.gallery.pro.extensions.storeDirectoryItems
+import com.simplemobiletools.gallery.pro.extensions.tryDeleteFileDirItem
+import com.simplemobiletools.gallery.pro.extensions.updateDBDirectory
+import com.simplemobiletools.gallery.pro.extensions.updateWidgets
+import com.simplemobiletools.gallery.pro.helpers.DIRECTORY
+import com.simplemobiletools.gallery.pro.helpers.FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.GET_ANY_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GET_IMAGE_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GET_VIDEO_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_DATE_TAKEN_DAILY
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_DATE_TAKEN_MONTHLY
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_LAST_MODIFIED_DAILY
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_LAST_MODIFIED_MONTHLY
+import com.simplemobiletools.gallery.pro.helpers.GROUP_DESCENDING
+import com.simplemobiletools.gallery.pro.helpers.MAX_COLUMN_COUNT
+import com.simplemobiletools.gallery.pro.helpers.MONTH_MILLISECONDS
+import com.simplemobiletools.gallery.pro.helpers.MediaFetcher
+import com.simplemobiletools.gallery.pro.helpers.PICKED_PATHS
+import com.simplemobiletools.gallery.pro.helpers.RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.SET_WALLPAPER_INTENT
+import com.simplemobiletools.gallery.pro.helpers.SHOW_ALL
+import com.simplemobiletools.gallery.pro.helpers.SHOW_TEMP_HIDDEN_DURATION
+import com.simplemobiletools.gallery.pro.helpers.SKIP_AUTHENTICATION
+import com.simplemobiletools.gallery.pro.helpers.TYPE_GIFS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_IMAGES
+import com.simplemobiletools.gallery.pro.helpers.TYPE_RAWS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_SVGS
+import com.simplemobiletools.gallery.pro.helpers.TYPE_VIDEOS
+import com.simplemobiletools.gallery.pro.helpers.VIEW_TYPE_GRID
+import com.simplemobiletools.gallery.pro.helpers.getDefaultFileFilter
 import com.simplemobiletools.gallery.pro.interfaces.DirectoryOperationsListener
 import com.simplemobiletools.gallery.pro.jobs.NewPhotoFetcher
 import com.simplemobiletools.gallery.pro.models.Directory
 import com.simplemobiletools.gallery.pro.models.Medium
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.*
-import java.util.*
-import kotlin.collections.ArrayList
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.InputStream
+import java.io.OutputStream
+import java.util.HashSet
 
 class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     private val PICK_MEDIA = 2
@@ -407,14 +506,12 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     }
 
     private fun checkOTGPath() {
-        ensureBackgroundThread {
-            if (!config.wasOTGHandled && hasPermission(PERMISSION_WRITE_STORAGE) && hasOTGConnected() && config.OTGPath.isEmpty()) {
-                getStorageDirectories().firstOrNull { it.trimEnd('/') != internalStoragePath && it.trimEnd('/') != sdCardPath }?.apply {
-                    config.wasOTGHandled = true
-                    val otgPath = trimEnd('/')
-                    config.OTGPath = otgPath
-                    config.addIncludedFolder(otgPath)
-                }
+        if (!config.wasOTGHandled && hasPermission(PERMISSION_WRITE_STORAGE) && hasOTGConnected() && config.OTGPath.isEmpty()) {
+            getStorageDirectories().firstOrNull { it.trimEnd('/') != internalStoragePath && it.trimEnd('/') != sdCardPath }?.apply {
+                config.wasOTGHandled = true
+                val otgPath = trimEnd('/')
+                config.OTGPath = otgPath
+                config.addIncludedFolder(otgPath)
             }
         }
     }
@@ -482,9 +579,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
             if (config.directorySorting and SORT_BY_DATE_MODIFIED != 0 || config.directorySorting and SORT_BY_DATE_TAKEN != 0) {
                 getDirectories()
             } else {
-                ensureBackgroundThread {
-                    gotDirectories(getCurrentlyDisplayedDirs())
-                }
+                gotDirectories(getCurrentlyDisplayedDirs())
             }
         }
     }
@@ -540,7 +635,8 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     }
 
     override fun deleteFolders(folders: ArrayList<File>) {
-        val fileDirItems = folders.asSequence().filter { it.isDirectory }.map { FileDirItem(it.absolutePath, it.name, true) }.toMutableList() as ArrayList<FileDirItem>
+        val fileDirItems = folders.asSequence().filter { it.isDirectory }.map { FileDirItem(it.absolutePath, it.name, true) }
+            .toMutableList() as ArrayList<FileDirItem>
         when {
             fileDirItems.isEmpty() -> return
             fileDirItems.size == 1 -> {
@@ -595,15 +691,15 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                 refreshItems()
             }
 
-            ensureBackgroundThread {
-                folders.filter { !getDoesFilePathExist(it.absolutePath, OTGPath) }.forEach {
-                    directoryDao.deleteDirPath(it.absolutePath)
-                }
+            folders.filter { !getDoesFilePathExist(it.absolutePath, OTGPath) }.forEach {
+                directoryDao.deleteDirPath(it.absolutePath)
+            }
 
-                if (config.deleteEmptyFolders) {
-                    folders.filter { !it.absolutePath.isDownloadsFolder() && it.isDirectory && it.toFileDirItem(this).getProperFileCount(this, true) == 0 }.forEach {
-                        tryDeleteFileDirItem(it.toFileDirItem(this), true, true)
-                    }
+            if (config.deleteEmptyFolders) {
+                folders.filter {
+                    !it.absolutePath.isDownloadsFolder() && it.isDirectory && it.toFileDirItem(this).getProperFileCount(this, true) == 0
+                }.forEach {
+                    tryDeleteFileDirItem(it.toFileDirItem(this), true, true)
                 }
             }
         }
@@ -626,10 +722,12 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
 
         if (config.scrollHorizontally) {
             layoutManager.orientation = RecyclerView.HORIZONTAL
-            directories_refresh_layout.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            directories_refresh_layout.layoutParams =
+                FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT)
         } else {
             layoutManager.orientation = RecyclerView.VERTICAL
-            directories_refresh_layout.layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            directories_refresh_layout.layoutParams =
+                FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
 
         layoutManager.spanCount = config.dirColumnCnt
@@ -702,22 +800,18 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     private fun toggleRecycleBin(show: Boolean) {
         config.showRecycleBinAtFolders = show
         invalidateOptionsMenu()
-        ensureBackgroundThread {
-            var dirs = getCurrentlyDisplayedDirs()
-            if (!show) {
-                dirs = dirs.filter { it.path != RECYCLE_BIN } as ArrayList<Directory>
-            }
-            gotDirectories(dirs)
+        var dirs = getCurrentlyDisplayedDirs()
+        if (!show) {
+            dirs = dirs.filter { it.path != RECYCLE_BIN } as ArrayList<Directory>
         }
+        gotDirectories(dirs)
     }
 
     private fun createNewFolder() {
         FilePickerDialog(this, internalStoragePath, false, config.shouldShowHidden, false, true) {
             CreateNewFolderDialog(this, it) {
                 config.tempFolderPath = it
-                ensureBackgroundThread {
-                    gotDirectories(addTempFolderIfNeeded(getCurrentlyDisplayedDirs()))
-                }
+                gotDirectories(addTempFolderIfNeeded(getCurrentlyDisplayedDirs()))
             }
         }
     }
@@ -927,7 +1021,16 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                         grouping and GROUP_BY_LAST_MODIFIED_DAILY != 0 ||
                         grouping and GROUP_BY_LAST_MODIFIED_MONTHLY != 0
 
-                val curMedia = mLastMediaFetcher!!.getFilesFrom(directory.path, getImagesOnly, getVideosOnly, getProperDateTaken, getProperLastModified, getProperFileSize, favoritePaths, false)
+                val curMedia = mLastMediaFetcher!!.getFilesFrom(
+                    directory.path,
+                    getImagesOnly,
+                    getVideosOnly,
+                    getProperDateTaken,
+                    getProperLastModified,
+                    getProperFileSize,
+                    favoritePaths,
+                    false
+                )
                 val newDir = if (curMedia.isEmpty()) {
                     if (directory.path != tempFolderPath) {
                         dirPathsToRemove.add(directory.path)
@@ -1019,7 +1122,16 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                     grouping and GROUP_BY_LAST_MODIFIED_DAILY != 0 ||
                     grouping and GROUP_BY_LAST_MODIFIED_MONTHLY != 0
 
-            val newMedia = mLastMediaFetcher!!.getFilesFrom(folder, getImagesOnly, getVideosOnly, getProperDateTaken, getProperLastModified, getProperFileSize, favoritePaths, false)
+            val newMedia = mLastMediaFetcher!!.getFilesFrom(
+                folder,
+                getImagesOnly,
+                getVideosOnly,
+                getProperDateTaken,
+                getProperLastModified,
+                getProperFileSize,
+                favoritePaths,
+                false
+            )
             if (newMedia.isEmpty()) {
                 continue
             }
@@ -1149,7 +1261,8 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         } else {
             runOnUiThread {
                 if (textToSearch.isNotEmpty()) {
-                    dirsToShow = dirsToShow.filter { it.name.contains(textToSearch, true) }.sortedBy { !it.name.startsWith(textToSearch, true) }.toMutableList() as ArrayList
+                    dirsToShow = dirsToShow.filter { it.name.contains(textToSearch, true) }.sortedBy { !it.name.startsWith(textToSearch, true) }
+                        .toMutableList() as ArrayList
                 }
                 checkPlaceholderVisibility(dirsToShow)
 
@@ -1232,15 +1345,14 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
 
     private fun getCurrentlyDisplayedDirs() = getRecyclerAdapter()?.dirs ?: ArrayList()
 
-    private fun getBubbleTextItem(index: Int) = getRecyclerAdapter()?.dirs?.getOrNull(index)?.getBubbleText(config.directorySorting, this, mDateFormat, mTimeFormat)
-        ?: ""
+    private fun getBubbleTextItem(index: Int) =
+        getRecyclerAdapter()?.dirs?.getOrNull(index)?.getBubbleText(config.directorySorting, this, mDateFormat, mTimeFormat)
+                ?: ""
 
     private fun setupLatestMediaId() {
-        ensureBackgroundThread {
-            if (hasPermission(PERMISSION_READ_STORAGE)) {
-                mLatestMediaId = getLatestMediaId()
-                mLatestMediaDateId = getLatestMediaByDateId()
-            }
+        if (hasPermission(PERMISSION_READ_STORAGE)) {
+            mLatestMediaId = getLatestMediaId()
+            mLatestMediaDateId = getLatestMediaByDateId()
         }
     }
 
@@ -1250,19 +1362,17 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         }
 
         mLastMediaHandler.postDelayed({
-            ensureBackgroundThread {
-                val mediaId = getLatestMediaId()
-                val mediaDateId = getLatestMediaByDateId()
-                if (mLatestMediaId != mediaId || mLatestMediaDateId != mediaDateId) {
-                    mLatestMediaId = mediaId
-                    mLatestMediaDateId = mediaDateId
-                    runOnUiThread {
-                        getDirectories()
-                    }
-                } else {
-                    mLastMediaHandler.removeCallbacksAndMessages(null)
-                    checkLastMediaChanged()
+            val mediaId = getLatestMediaId()
+            val mediaDateId = getLatestMediaByDateId()
+            if (mLatestMediaId != mediaId || mLatestMediaDateId != mediaDateId) {
+                mLatestMediaId = mediaId
+                mLatestMediaDateId = mediaDateId
+                runOnUiThread {
+                    getDirectories()
                 }
+            } else {
+                mLastMediaHandler.removeCallbacksAndMessages(null)
+                checkLastMediaChanged()
             }
         }, LAST_MEDIA_CHECK_PERIOD)
     }
@@ -1271,11 +1381,9 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         if (config.useRecycleBin && config.lastBinCheck < System.currentTimeMillis() - DAY_SECONDS * 1000) {
             config.lastBinCheck = System.currentTimeMillis()
             Handler().postDelayed({
-                ensureBackgroundThread {
-                    try {
-                        mediaDB.deleteOldRecycleBinItems(System.currentTimeMillis() - MONTH_MILLISECONDS)
-                    } catch (e: Exception) {
-                    }
+                try {
+                    mediaDB.deleteOldRecycleBinItems(System.currentTimeMillis() - MONTH_MILLISECONDS)
+                } catch (e: Exception) {
                 }
             }, 3000L)
         }
@@ -1285,44 +1393,42 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     // /storage/emulated/0/Android/data/com.facebook.orca/files/stickers/175139712676531/209575122566323
     // /storage/emulated/0/Android/data/com.facebook.orca/files/stickers/497837993632037/499671223448714
     private fun excludeSpamFolders() {
-        ensureBackgroundThread {
-            try {
-                val internalPath = internalStoragePath
-                val checkedPaths = ArrayList<String>()
-                val oftenRepeatedPaths = ArrayList<String>()
-                val paths = mDirs.map { it.path.removePrefix(internalPath) }.toMutableList() as ArrayList<String>
-                paths.forEach {
-                    val parts = it.split("/")
-                    var currentString = ""
-                    for (i in 0 until parts.size) {
-                        currentString += "${parts[i]}/"
+        try {
+            val internalPath = internalStoragePath
+            val checkedPaths = ArrayList<String>()
+            val oftenRepeatedPaths = ArrayList<String>()
+            val paths = mDirs.map { it.path.removePrefix(internalPath) }.toMutableList() as ArrayList<String>
+            paths.forEach {
+                val parts = it.split("/")
+                var currentString = ""
+                for (i in 0 until parts.size) {
+                    currentString += "${parts[i]}/"
 
-                        if (!checkedPaths.contains(currentString)) {
-                            val cnt = paths.count { it.startsWith(currentString) }
-                            if (cnt > 50 && currentString.startsWith("/Android/data", true)) {
-                                oftenRepeatedPaths.add(currentString)
-                            }
+                    if (!checkedPaths.contains(currentString)) {
+                        val cnt = paths.count { it.startsWith(currentString) }
+                        if (cnt > 50 && currentString.startsWith("/Android/data", true)) {
+                            oftenRepeatedPaths.add(currentString)
                         }
-
-                        checkedPaths.add(currentString)
                     }
-                }
 
-                val substringToRemove = oftenRepeatedPaths.filter {
-                    val path = it
-                    it == "/" || oftenRepeatedPaths.any { it != path && it.startsWith(path) }
+                    checkedPaths.add(currentString)
                 }
-
-                oftenRepeatedPaths.removeAll(substringToRemove)
-                val OTGPath = config.OTGPath
-                oftenRepeatedPaths.forEach {
-                    val file = File("$internalPath/$it")
-                    if (getDoesFilePathExist(file.absolutePath, OTGPath)) {
-                        config.addExcludedFolder(file.absolutePath)
-                    }
-                }
-            } catch (e: Exception) {
             }
+
+            val substringToRemove = oftenRepeatedPaths.filter {
+                val path = it
+                it == "/" || oftenRepeatedPaths.any { it != path && it.startsWith(path) }
+            }
+
+            oftenRepeatedPaths.removeAll(substringToRemove)
+            val OTGPath = config.OTGPath
+            oftenRepeatedPaths.forEach {
+                val file = File("$internalPath/$it")
+                if (getDoesFilePathExist(file.absolutePath, OTGPath)) {
+                    config.addExcludedFolder(file.absolutePath)
+                }
+            }
+        } catch (e: Exception) {
         }
     }
 
@@ -1352,16 +1458,12 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     }
 
     override fun recheckPinnedFolders() {
-        ensureBackgroundThread {
-            gotDirectories(movePinnedDirectoriesToFront(getCurrentlyDisplayedDirs()))
-        }
+        gotDirectories(movePinnedDirectoriesToFront(getCurrentlyDisplayedDirs()))
     }
 
     override fun updateDirectories(directories: ArrayList<Directory>) {
-        ensureBackgroundThread {
-            storeDirectoryItems(directories)
-            removeInvalidDBDirectories()
-        }
+        storeDirectoryItems(directories)
+        removeInvalidDBDirectories()
     }
 
     private fun checkWhatsNewDialog() {

@@ -12,15 +12,32 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.MenuItemCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.simplemobiletools.commons.extensions.*
-import com.simplemobiletools.commons.helpers.ensureBackgroundThread
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beGoneIf
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.deleteFiles
+import com.simplemobiletools.commons.extensions.getTimeFormat
+import com.simplemobiletools.commons.extensions.isMediaFile
+import com.simplemobiletools.commons.extensions.isVideoFast
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.toast
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.commons.views.MyGridLayoutManager
 import com.simplemobiletools.gallery.pro.R
 import com.simplemobiletools.gallery.pro.adapters.MediaAdapter
 import com.simplemobiletools.gallery.pro.asynctasks.GetMediaAsynctask
-import com.simplemobiletools.gallery.pro.extensions.*
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.deleteDBPath
+import com.simplemobiletools.gallery.pro.extensions.getCachedMedia
+import com.simplemobiletools.gallery.pro.extensions.movePathsInRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.openPath
+import com.simplemobiletools.gallery.pro.extensions.recycleBinPath
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_NONE
+import com.simplemobiletools.gallery.pro.helpers.MediaFetcher
+import com.simplemobiletools.gallery.pro.helpers.PATH
+import com.simplemobiletools.gallery.pro.helpers.SHOW_ALL
+import com.simplemobiletools.gallery.pro.helpers.VIEW_TYPE_GRID
 import com.simplemobiletools.gallery.pro.interfaces.MediaOperationsListener
 import com.simplemobiletools.gallery.pro.models.Medium
 import com.simplemobiletools.gallery.pro.models.ThumbnailItem
@@ -105,24 +122,22 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
     }
 
     private fun textChanged(text: String) {
-        ensureBackgroundThread {
-            try {
-                val filtered = mAllMedia.filter { it is Medium && it.name.contains(text, true) } as ArrayList
-                filtered.sortBy { it is Medium && !it.name.startsWith(text, true) }
-                val grouped = MediaFetcher(applicationContext).groupMedia(filtered as ArrayList<Medium>, "")
-                runOnUiThread {
-                    if (grouped.isEmpty()) {
-                        media_empty_text_placeholder.text = getString(R.string.no_items_found)
-                        media_empty_text_placeholder.beVisible()
-                    } else {
-                        media_empty_text_placeholder.beGone()
-                    }
-
-                    getMediaAdapter()?.updateMedia(grouped)
-                    measureRecyclerViewContent(grouped)
+        try {
+            val filtered = mAllMedia.filter { it is Medium && it.name.contains(text, true) } as ArrayList
+            filtered.sortBy { it is Medium && !it.name.startsWith(text, true) }
+            val grouped = MediaFetcher(applicationContext).groupMedia(filtered as ArrayList<Medium>, "")
+            runOnUiThread {
+                if (grouped.isEmpty()) {
+                    media_empty_text_placeholder.text = getString(R.string.no_items_found)
+                    media_empty_text_placeholder.beVisible()
+                } else {
+                    media_empty_text_placeholder.beGone()
                 }
-            } catch (ignored: Exception) {
+
+                getMediaAdapter()?.updateMedia(grouped)
+                measureRecyclerViewContent(grouped)
             }
+        } catch (ignored: Exception) {
         }
     }
 
@@ -343,12 +358,10 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
 
             mAllMedia.removeAll { filtered.map { it.path }.contains((it as? Medium)?.path) }
 
-            ensureBackgroundThread {
-                val useRecycleBin = config.useRecycleBin
-                filtered.forEach {
-                    if (it.path.startsWith(recycleBinPath) || !useRecycleBin) {
-                        deleteDBPath(it.path)
-                    }
+            val useRecycleBin = config.useRecycleBin
+            filtered.forEach {
+                if (it.path.startsWith(recycleBinPath) || !useRecycleBin) {
+                    deleteDBPath(it.path)
                 }
             }
         }

@@ -23,11 +23,31 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.simplemobiletools.commons.dialogs.CreateNewFolderDialog
-import com.simplemobiletools.commons.extensions.*
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beGoneIf
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.deleteFiles
+import com.simplemobiletools.commons.extensions.getAdjustedPrimaryColor
+import com.simplemobiletools.commons.extensions.getDoesFilePathExist
+import com.simplemobiletools.commons.extensions.getFilenameFromPath
+import com.simplemobiletools.commons.extensions.getIsPathDirectory
+import com.simplemobiletools.commons.extensions.getLatestMediaByDateId
+import com.simplemobiletools.commons.extensions.getLatestMediaId
+import com.simplemobiletools.commons.extensions.getTimeFormat
+import com.simplemobiletools.commons.extensions.handleHiddenFolderPasswordProtection
+import com.simplemobiletools.commons.extensions.handleLockedFolderOpening
+import com.simplemobiletools.commons.extensions.isGone
+import com.simplemobiletools.commons.extensions.isMediaFile
+import com.simplemobiletools.commons.extensions.isVideoFast
+import com.simplemobiletools.commons.extensions.isVisible
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.toast
+import com.simplemobiletools.commons.extensions.updateActionBarTitle
 import com.simplemobiletools.commons.helpers.PERMISSION_WRITE_STORAGE
 import com.simplemobiletools.commons.helpers.REQUEST_EDIT_IMAGE
 import com.simplemobiletools.commons.helpers.SORT_BY_RANDOM
-import com.simplemobiletools.commons.helpers.ensureBackgroundThread
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.commons.views.MyGridLayoutManager
 import com.simplemobiletools.commons.views.MyRecyclerView
@@ -39,8 +59,44 @@ import com.simplemobiletools.gallery.pro.dialogs.ChangeGroupingDialog
 import com.simplemobiletools.gallery.pro.dialogs.ChangeSortingDialog
 import com.simplemobiletools.gallery.pro.dialogs.ChangeViewTypeDialog
 import com.simplemobiletools.gallery.pro.dialogs.FilterMediaDialog
-import com.simplemobiletools.gallery.pro.extensions.*
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.deleteDBPath
+import com.simplemobiletools.gallery.pro.extensions.directoryDao
+import com.simplemobiletools.gallery.pro.extensions.emptyAndDisableTheRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.emptyTheRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.getCachedMedia
+import com.simplemobiletools.gallery.pro.extensions.getHumanizedFilename
+import com.simplemobiletools.gallery.pro.extensions.isDownloadsFolder
+import com.simplemobiletools.gallery.pro.extensions.launchAbout
+import com.simplemobiletools.gallery.pro.extensions.launchCamera
+import com.simplemobiletools.gallery.pro.extensions.launchSettings
+import com.simplemobiletools.gallery.pro.extensions.mediaDB
+import com.simplemobiletools.gallery.pro.extensions.movePathsInRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.openPath
+import com.simplemobiletools.gallery.pro.extensions.recycleBinPath
+import com.simplemobiletools.gallery.pro.extensions.restoreRecycleBinPaths
+import com.simplemobiletools.gallery.pro.extensions.showRecycleBinEmptyingDialog
+import com.simplemobiletools.gallery.pro.extensions.tryDeleteFileDirItem
+import com.simplemobiletools.gallery.pro.extensions.updateWidgets
+import com.simplemobiletools.gallery.pro.helpers.DIRECTORY
+import com.simplemobiletools.gallery.pro.helpers.FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.GET_ANY_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GET_IMAGE_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GET_VIDEO_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_NONE
+import com.simplemobiletools.gallery.pro.helpers.MAX_COLUMN_COUNT
+import com.simplemobiletools.gallery.pro.helpers.MediaFetcher
+import com.simplemobiletools.gallery.pro.helpers.PATH
+import com.simplemobiletools.gallery.pro.helpers.PICKED_PATHS
+import com.simplemobiletools.gallery.pro.helpers.RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.SET_WALLPAPER_INTENT
+import com.simplemobiletools.gallery.pro.helpers.SHOW_ALL
+import com.simplemobiletools.gallery.pro.helpers.SHOW_FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.SHOW_RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.SHOW_TEMP_HIDDEN_DURATION
+import com.simplemobiletools.gallery.pro.helpers.SKIP_AUTHENTICATION
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_START_ON_ENTER
+import com.simplemobiletools.gallery.pro.helpers.VIEW_TYPE_GRID
 import com.simplemobiletools.gallery.pro.interfaces.MediaOperationsListener
 import com.simplemobiletools.gallery.pro.models.Medium
 import com.simplemobiletools.gallery.pro.models.ThumbnailItem
@@ -48,10 +104,11 @@ import com.simplemobiletools.gallery.pro.models.ThumbnailSection
 import kotlinx.android.synthetic.main.activity_media.*
 import java.io.File
 import java.io.IOException
-import java.util.*
+import java.util.ArrayList
+import java.util.HashMap
 
 class MediaActivity : SimpleActivity(), MediaOperationsListener {
-    private val LAST_MEDIA_CHECK_PERIOD = 3000L
+    private val LAST_MEDIA_CHECK_PERIOD = 30L
 
     private var mPath = ""
     private var mIsGetImageIntent = false
@@ -339,24 +396,22 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
     }
 
     private fun searchQueryChanged(text: String) {
-        ensureBackgroundThread {
-            try {
-                val filtered = mMedia.filter { it is Medium && it.name.contains(text, true) } as ArrayList
-                filtered.sortBy { it is Medium && !it.name.startsWith(text, true) }
-                val grouped = MediaFetcher(applicationContext).groupMedia(filtered as ArrayList<Medium>, mPath)
-                runOnUiThread {
-                    if (grouped.isEmpty()) {
-                        media_empty_text_placeholder.text = getString(R.string.no_items_found)
-                        media_empty_text_placeholder.beVisible()
-                    } else {
-                        media_empty_text_placeholder.beGone()
-                    }
-
-                    getMediaAdapter()?.updateMedia(grouped)
-                    measureRecyclerViewContent(grouped)
+        try {
+            val filtered = mMedia.filter { it is Medium && it.name.contains(text, true) } as ArrayList
+            filtered.sortBy { it is Medium && !it.name.startsWith(text, true) }
+            val grouped = MediaFetcher(applicationContext).groupMedia(filtered as ArrayList<Medium>, mPath)
+            runOnUiThread {
+                if (grouped.isEmpty()) {
+                    media_empty_text_placeholder.text = getString(R.string.no_items_found)
+                    media_empty_text_placeholder.beVisible()
+                } else {
+                    media_empty_text_placeholder.beGone()
                 }
-            } catch (ignored: Exception) {
+
+                getMediaAdapter()?.updateMedia(grouped)
+                measureRecyclerViewContent(grouped)
             }
+        } catch (ignored: Exception) {
         }
     }
 
@@ -390,8 +445,10 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
         if (currAdapter == null) {
             initZoomListener()
             val fastscroller = if (config.scrollHorizontally) media_horizontal_fastscroller else media_vertical_fastscroller
-            MediaAdapter(this, mMedia.clone() as ArrayList<ThumbnailItem>, this, mIsGetImageIntent || mIsGetVideoIntent || mIsGetAnyIntent,
-                mAllowPickingMultiple, mPath, media_grid, fastscroller) {
+            MediaAdapter(
+                this, mMedia.clone() as ArrayList<ThumbnailItem>, this, mIsGetImageIntent || mIsGetVideoIntent || mIsGetAnyIntent,
+                mAllowPickingMultiple, mPath, media_grid, fastscroller
+            ) {
                 if (it is Medium && !isFinishing) {
                     itemClicked(it.path)
                 }
@@ -448,18 +505,16 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
 
         mLastMediaHandler.removeCallbacksAndMessages(null)
         mLastMediaHandler.postDelayed({
-            ensureBackgroundThread {
-                val mediaId = getLatestMediaId()
-                val mediaDateId = getLatestMediaByDateId()
-                if (mLatestMediaId != mediaId || mLatestMediaDateId != mediaDateId) {
-                    mLatestMediaId = mediaId
-                    mLatestMediaDateId = mediaDateId
-                    runOnUiThread {
-                        getMedia()
-                    }
-                } else {
-                    checkLastMediaChanged()
+            val mediaId = getLatestMediaId()
+            val mediaDateId = getLatestMediaByDateId()
+            if (mLatestMediaId != mediaId || mLatestMediaDateId != mediaDateId) {
+                mLatestMediaId = mediaId
+                mLatestMediaDateId = mediaDateId
+                runOnUiThread {
+                    getMedia()
                 }
+            } else {
+                checkLastMediaChanged()
             }
         }, LAST_MEDIA_CHECK_PERIOD)
     }
@@ -500,9 +555,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
     private fun restoreAllFiles() {
         val paths = mMedia.filter { it is Medium }.map { (it as Medium).path } as ArrayList<String>
         restoreRecycleBinPaths(paths) {
-            ensureBackgroundThread {
-                directoryDao.deleteDirPath(RECYCLE_BIN)
-            }
+            directoryDao.deleteDirPath(RECYCLE_BIN)
             finish()
         }
     }
@@ -537,7 +590,10 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
 
     private fun deleteDirectoryIfEmpty() {
         val fileDirItem = FileDirItem(mPath, mPath.getFilenameFromPath(), true)
-        if (config.deleteEmptyFolders && !fileDirItem.isDownloadsFolder() && fileDirItem.isDirectory && fileDirItem.getProperFileCount(this, true) == 0) {
+        if (config.deleteEmptyFolders && !fileDirItem.isDownloadsFolder() && fileDirItem.isDirectory && fileDirItem.getProperFileCount(
+                this,
+                true
+            ) == 0) {
             tryDeleteFileDirItem(fileDirItem, true, true)
         }
     }
@@ -569,16 +625,14 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
     private fun startAsyncTask() {
         mCurrAsyncTask?.stopFetching()
         mCurrAsyncTask = GetMediaAsynctask(applicationContext, mPath, mIsGetImageIntent, mIsGetVideoIntent, mShowAll) {
-            ensureBackgroundThread {
-                val oldMedia = mMedia.clone() as ArrayList<ThumbnailItem>
-                val newMedia = it
-                try {
-                    gotMedia(newMedia, false)
-                    oldMedia.filter { !newMedia.contains(it) }.mapNotNull { it as? Medium }.filter { !getDoesFilePathExist(it.path) }.forEach {
-                        mediaDB.deleteMediumPath(it.path)
-                    }
-                } catch (e: Exception) {
+            val oldMedia = mMedia.clone() as ArrayList<ThumbnailItem>
+            val newMedia = it
+            try {
+                gotMedia(newMedia, false)
+                oldMedia.filter { !newMedia.contains(it) }.mapNotNull { it as? Medium }.filter { !getDoesFilePathExist(it.path) }.forEach {
+                    mediaDB.deleteMediumPath(it.path)
                 }
+            } catch (e: Exception) {
             }
         }
 
@@ -593,9 +647,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
             }
 
             if (mPath == FAVORITES) {
-                ensureBackgroundThread {
-                    directoryDao.deleteDirPath(FAVORITES)
-                }
+                directoryDao.deleteDirPath(FAVORITES)
             }
 
             finish()
@@ -606,11 +658,9 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
     }
 
     private fun deleteDBDirectory() {
-        ensureBackgroundThread {
-            try {
-                directoryDao.deleteDirPath(mPath)
-            } catch (ignored: Exception) {
-            }
+        try {
+            directoryDao.deleteDirPath(mPath)
+        } catch (ignored: Exception) {
         }
     }
 
@@ -912,12 +962,10 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
 
             mMedia.removeAll { filtered.map { it.path }.contains((it as? Medium)?.path) }
 
-            ensureBackgroundThread {
-                val useRecycleBin = config.useRecycleBin
-                filtered.forEach {
-                    if (it.path.startsWith(recycleBinPath) || !useRecycleBin) {
-                        deleteDBPath(it.path)
-                    }
+            val useRecycleBin = config.useRecycleBin
+            filtered.forEach {
+                if (it.path.startsWith(recycleBinPath) || !useRecycleBin) {
+                    deleteDBPath(it.path)
                 }
             }
 
