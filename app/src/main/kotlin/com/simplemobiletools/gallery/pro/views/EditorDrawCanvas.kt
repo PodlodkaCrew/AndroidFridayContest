@@ -27,17 +27,11 @@ class EditorDrawCanvas(context: Context, attrs: AttributeSet) : View(context, at
 
     init {
         mColor = context.config.primaryColor
-        mPaint.apply {
-            color = mColor
-            style = Paint.Style.STROKE
-            strokeJoin = Paint.Join.ROUND
-            strokeCap = Paint.Cap.ROUND
-            strokeWidth = 40f
-            isAntiAlias = true
-        }
+        initExtraColors()
     }
 
     override fun onDraw(canvas: Canvas) {
+        initExtraColors()
         super.onDraw(canvas)
         canvas.save()
 
@@ -143,5 +137,20 @@ class EditorDrawCanvas(context: Context, attrs: AttributeSet) : View(context, at
         val lastKey = mPaths.keys.lastOrNull()
         mPaths.remove(lastKey)
         invalidate()
+    }
+
+    private fun initExtraColors() {
+        mPaint = Paint()
+
+
+
+        mPaint.apply {
+            color = mColor
+            style = Paint.Style.STROKE
+            strokeJoin = Paint.Join.ROUND
+            strokeCap = Paint.Cap.ROUND
+            strokeWidth = 40f
+            isAntiAlias = true
+        }
     }
 }

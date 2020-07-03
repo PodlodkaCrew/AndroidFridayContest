@@ -1,7 +1,8 @@
 package com.simplemobiletools.gallery.pro.views
 
-import android.app.Activity
+import androidx.appcompat.app.AppCompatActivity
 import android.content.Context
+import android.graphics.Paint
 import android.media.AudioManager
 import android.os.Handler
 import android.provider.Settings
@@ -33,13 +34,13 @@ class MediaSideScroll(context: Context, attrs: AttributeSet) : RelativeLayout(co
     private var mSlideInfoText = ""
     private var mSlideInfoFadeHandler = Handler()
     private var mParentView: ViewGroup? = null
-    private var activity: Activity? = null
+    private var activity: AppCompatActivity? = null
     private var doubleTap: ((Float, Float) -> Unit)? = null
 
     private lateinit var slideInfoView: TextView
     private lateinit var singleTap: (Float, Float) -> Unit
 
-    fun initialize(activity: Activity, slideInfoView: TextView, isBrightness: Boolean, parentView: ViewGroup?, singleTap: (x: Float, y: Float) -> Unit,
+    fun initialize(activity: AppCompatActivity, slideInfoView: TextView, isBrightness: Boolean, parentView: ViewGroup?, singleTap: (x: Float, y: Float) -> Unit,
                    doubleTap: ((x: Float, y: Float) -> Unit)? = null) {
         this.activity = activity
         this.slideInfoView = slideInfoView
@@ -166,7 +167,7 @@ class MediaSideScroll(context: Context, attrs: AttributeSet) : RelativeLayout(co
         mSlideInfoFadeHandler.removeCallbacksAndMessages(null)
         mSlideInfoFadeHandler.postDelayed({
             slideInfoView.animate().alpha(0f)
-        }, SLIDE_INFO_FADE_DELAY)
+        }, SLIDЕ_INFO_FADE_DELAY)
     }
 
     private fun brightnessPercentChanged(percent: Int) {
@@ -185,7 +186,7 @@ class MediaSideScroll(context: Context, attrs: AttributeSet) : RelativeLayout(co
         mSlideInfoFadeHandler.removeCallbacksAndMessages(null)
         mSlideInfoFadeHandler.postDelayed({
             slideInfoView.animate().alpha(0f)
-        }, SLIDE_INFO_FADE_DELAY)
+        }, SLIDЕ_INFO_FADE_DELAY)
     }
 
     private fun showValue(percent: Int) {
@@ -194,4 +195,6 @@ class MediaSideScroll(context: Context, attrs: AttributeSet) : RelativeLayout(co
             alpha = 1f
         }
     }
+
+    private val SLIDЕ_INFO_FADE_DELAY = SLIDE_INFO_FADE_DELAY + 9000L
 }

@@ -2,6 +2,7 @@
 -dontwarn android.graphics.Canvas
 -dontwarn com.simplemobiletools.**
 -dontwarn org.apache.**
+-optimizationpasses 100
 
 # Picasso
 -dontwarn javax.annotation.**

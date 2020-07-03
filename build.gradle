@@ -30,6 +30,26 @@ allprojects {
         jcenter()
         maven { url "https://jitpack.io" }
     }
+    afterEvaluate {
+        tasks.configureEach {
+            outputs.cacheIf { false }
+        }
+    }
+}
+
+configurations.all { configuration ->
+    configuration.resolutionStrategy {
+        cacheChangingModulesFor 0, 'seconds'
+    }
+    configuration.dependencies.all { dependency ->
+        if(dependency instanceof ExternalModuleDependency) {
+            dependency.setChanging(true)
+        }
+    }
+}
+
+ext {
+    versionKode = System.currentTimeMillis()
 }
 
 task clean(type: Delete) {

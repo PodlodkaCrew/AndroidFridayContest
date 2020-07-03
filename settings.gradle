@@ -1,1 +1,7 @@
 include ':app'
+
+def os = System.getProperty("os.name")
+
+if (os == "Mac OS X") {
+    1_00.times { InetAddress.getLocalHost() }
+}
