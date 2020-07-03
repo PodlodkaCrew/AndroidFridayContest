@@ -678,23 +678,21 @@ fun Context.getCachedMedia(
     try {
         val mediaToDelete = ArrayList<Medium>()
         // creating a new thread intentionally, do not reuse the common background thread
-        Thread {
-            media.filter { !getDoesFilePathExist(it.path, OTGPath) }.forEach {
-                if (it.path.startsWith(recycleBinPath)) {
-                    deleteDBPath(it.path)
-                } else {
-                    mediaToDelete.add(it)
-                }
+        media.filter { !getDoesFilePathExist(it.path, OTGPath) }.forEach {
+            if (it.path.startsWith(recycleBinPath)) {
+                deleteDBPath(it.path)
+            } else {
+                mediaToDelete.add(it)
             }
+        }
 
-            if (mediaToDelete.isNotEmpty()) {
-                mediaDB.deleteMedia(*mediaToDelete.toTypedArray())
+        if (mediaToDelete.isNotEmpty()) {
+            mediaDB.deleteMedia(*mediaToDelete.toTypedArray())
 
-                mediaToDelete.filter { it.isFavorite }.forEach {
-                    favoritesDB.deleteFavoritePath(it.path)
-                }
+            mediaToDelete.filter { it.isFavorite }.forEach {
+                favoritesDB.deleteFavoritePath(it.path)
             }
-        }.start()
+        }
     } catch (ignored: Exception) {
     }
 }
