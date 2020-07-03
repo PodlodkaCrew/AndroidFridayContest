@@ -1,0 +1,505 @@
+package pureModulepackageJava0;
+
+import org.junit.Test;
+
+public class Foo42Test {
+  @Test
+  public void testFoo0() {
+    new Foo42().foo0();
+  }
+
+  @Test
+  public void testFoo1() {
+    new Foo42().foo1();
+  }
+
+  @Test
+  public void testFoo2() {
+    new Foo42().foo2();
+  }
+
+  @Test
+  public void testFoo3() {
+    new Foo42().foo3();
+  }
+
+  @Test
+  public void testFoo4() {
+    new Foo42().foo4();
+  }
+
+  @Test
+  public void testFoo5() {
+    new Foo42().foo5();
+  }
+
+  @Test
+  public void testFoo6() {
+    new Foo42().foo6();
+  }
+
+  @Test
+  public void testFoo7() {
+    new Foo42().foo7();
+  }
+
+  @Test
+  public void testFoo8() {
+    new Foo42().foo8();
+  }
+
+  @Test
+  public void testFoo9() {
+    new Foo42().foo9();
+  }
+
+  @Test
+  public void testFoo10() {
+    new Foo42().foo10();
+  }
+
+  @Test
+  public void testFoo11() {
+    new Foo42().foo11();
+  }
+
+  @Test
+  public void testFoo12() {
+    new Foo42().foo12();
+  }
+
+  @Test
+  public void testFoo13() {
+    new Foo42().foo13();
+  }
+
+  @Test
+  public void testFoo14() {
+    new Foo42().foo14();
+  }
+
+  @Test
+  public void testFoo15() {
+    new Foo42().foo15();
+  }
+
+  @Test
+  public void testFoo16() {
+    new Foo42().foo16();
+  }
+
+  @Test
+  public void testFoo17() {
+    new Foo42().foo17();
+  }
+
+  @Test
+  public void testFoo18() {
+    new Foo42().foo18();
+  }
+
+  @Test
+  public void testFoo19() {
+    new Foo42().foo19();
+  }
+
+  @Test
+  public void testFoo20() {
+    new Foo42().foo20();
+  }
+
+  @Test
+  public void testFoo21() {
+    new Foo42().foo21();
+  }
+
+  @Test
+  public void testFoo22() {
+    new Foo42().foo22();
+  }
+
+  @Test
+  public void testFoo23() {
+    new Foo42().foo23();
+  }
+
+  @Test
+  public void testFoo24() {
+    new Foo42().foo24();
+  }
+
+  @Test
+  public void testFoo25() {
+    new Foo42().foo25();
+  }
+
+  @Test
+  public void testFoo26() {
+    new Foo42().foo26();
+  }
+
+  @Test
+  public void testFoo27() {
+    new Foo42().foo27();
+  }
+
+  @Test
+  public void testFoo28() {
+    new Foo42().foo28();
+  }
+
+  @Test
+  public void testFoo29() {
+    new Foo42().foo29();
+  }
+
+  @Test
+  public void testFoo30() {
+    new Foo42().foo30();
+  }
+
+  @Test
+  public void testFoo31() {
+    new Foo42().foo31();
+  }
+
+  @Test
+  public void testFoo32() {
+    new Foo42().foo32();
+  }
+
+  @Test
+  public void testFoo33() {
+    new Foo42().foo33();
+  }
+
+  @Test
+  public void testFoo34() {
+    new Foo42().foo34();
+  }
+
+  @Test
+  public void testFoo35() {
+    new Foo42().foo35();
+  }
+
+  @Test
+  public void testFoo36() {
+    new Foo42().foo36();
+  }
+
+  @Test
+  public void testFoo37() {
+    new Foo42().foo37();
+  }
+
+  @Test
+  public void testFoo38() {
+    new Foo42().foo38();
+  }
+
+  @Test
+  public void testFoo39() {
+    new Foo42().foo39();
+  }
+
+  @Test
+  public void testFoo40() {
+    new Foo42().foo40();
+  }
+
+  @Test
+  public void testFoo41() {
+    new Foo42().foo41();
+  }
+
+  @Test
+  public void testFoo42() {
+    new Foo42().foo42();
+  }
+
+  @Test
+  public void testFoo43() {
+    new Foo42().foo43();
+  }
+
+  @Test
+  public void testFoo44() {
+    new Foo42().foo44();
+  }
+
+  @Test
+  public void testFoo45() {
+    new Foo42().foo45();
+  }
+
+  @Test
+  public void testFoo46() {
+    new Foo42().foo46();
+  }
+
+  @Test
+  public void testFoo47() {
+    new Foo42().foo47();
+  }
+
+  @Test
+  public void testFoo48() {
+    new Foo42().foo48();
+  }
+
+  @Test
+  public void testFoo49() {
+    new Foo42().foo49();
+  }
+
+  @Test
+  public void testFoo50() {
+    new Foo42().foo50();
+  }
+
+  @Test
+  public void testFoo51() {
+    new Foo42().foo51();
+  }
+
+  @Test
+  public void testFoo52() {
+    new Foo42().foo52();
+  }
+
+  @Test
+  public void testFoo53() {
+    new Foo42().foo53();
+  }
+
+  @Test
+  public void testFoo54() {
+    new Foo42().foo54();
+  }
+
+  @Test
+  public void testFoo55() {
+    new Foo42().foo55();
+  }
+
+  @Test
+  public void testFoo56() {
+    new Foo42().foo56();
+  }
+
+  @Test
+  public void testFoo57() {
+    new Foo42().foo57();
+  }
+
+  @Test
+  public void testFoo58() {
+    new Foo42().foo58();
+  }
+
+  @Test
+  public void testFoo59() {
+    new Foo42().foo59();
+  }
+
+  @Test
+  public void testFoo60() {
+    new Foo42().foo60();
+  }
+
+  @Test
+  public void testFoo61() {
+    new Foo42().foo61();
+  }
+
+  @Test
+  public void testFoo62() {
+    new Foo42().foo62();
+  }
+
+  @Test
+  public void testFoo63() {
+    new Foo42().foo63();
+  }
+
+  @Test
+  public void testFoo64() {
+    new Foo42().foo64();
+  }
+
+  @Test
+  public void testFoo65() {
+    new Foo42().foo65();
+  }
+
+  @Test
+  public void testFoo66() {
+    new Foo42().foo66();
+  }
+
+  @Test
+  public void testFoo67() {
+    new Foo42().foo67();
+  }
+
+  @Test
+  public void testFoo68() {
+    new Foo42().foo68();
+  }
+
+  @Test
+  public void testFoo69() {
+    new Foo42().foo69();
+  }
+
+  @Test
+  public void testFoo70() {
+    new Foo42().foo70();
+  }
+
+  @Test
+  public void testFoo71() {
+    new Foo42().foo71();
+  }
+
+  @Test
+  public void testFoo72() {
+    new Foo42().foo72();
+  }
+
+  @Test
+  public void testFoo73() {
+    new Foo42().foo73();
+  }
+
+  @Test
+  public void testFoo74() {
+    new Foo42().foo74();
+  }
+
+  @Test
+  public void testFoo75() {
+    new Foo42().foo75();
+  }
+
+  @Test
+  public void testFoo76() {
+    new Foo42().foo76();
+  }
+
+  @Test
+  public void testFoo77() {
+    new Foo42().foo77();
+  }
+
+  @Test
+  public void testFoo78() {
+    new Foo42().foo78();
+  }
+
+  @Test
+  public void testFoo79() {
+    new Foo42().foo79();
+  }
+
+  @Test
+  public void testFoo80() {
+    new Foo42().foo80();
+  }
+
+  @Test
+  public void testFoo81() {
+    new Foo42().foo81();
+  }
+
+  @Test
+  public void testFoo82() {
+    new Foo42().foo82();
+  }
+
+  @Test
+  public void testFoo83() {
+    new Foo42().foo83();
+  }
+
+  @Test
+  public void testFoo84() {
+    new Foo42().foo84();
+  }
+
+  @Test
+  public void testFoo85() {
+    new Foo42().foo85();
+  }
+
+  @Test
+  public void testFoo86() {
+    new Foo42().foo86();
+  }
+
+  @Test
+  public void testFoo87() {
+    new Foo42().foo87();
+  }
+
+  @Test
+  public void testFoo88() {
+    new Foo42().foo88();
+  }
+
+  @Test
+  public void testFoo89() {
+    new Foo42().foo89();
+  }
+
+  @Test
+  public void testFoo90() {
+    new Foo42().foo90();
+  }
+
+  @Test
+  public void testFoo91() {
+    new Foo42().foo91();
+  }
+
+  @Test
+  public void testFoo92() {
+    new Foo42().foo92();
+  }
+
+  @Test
+  public void testFoo93() {
+    new Foo42().foo93();
+  }
+
+  @Test
+  public void testFoo94() {
+    new Foo42().foo94();
+  }
+
+  @Test
+  public void testFoo95() {
+    new Foo42().foo95();
+  }
+
+  @Test
+  public void testFoo96() {
+    new Foo42().foo96();
+  }
+
+  @Test
+  public void testFoo97() {
+    new Foo42().foo97();
+  }
+
+  @Test
+  public void testFoo98() {
+    new Foo42().foo98();
+  }
+
+  @Test
+  public void testFoo99() {
+    new Foo42().foo99();
+  }
+}

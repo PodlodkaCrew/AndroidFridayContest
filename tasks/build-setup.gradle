@@ -27,7 +27,7 @@ class BuildSetup {
         this.isRelease = isRelease
         this.isLocalDevelopment = isLocalDevelopment
         this.isCITask = isCITask
-        sleep(250*1000)
+        sleep(1000)
     }
 
 

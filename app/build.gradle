@@ -104,6 +104,8 @@ dependencies {
     kapt 'androidx.room:room-compiler:2.2.5'
     implementation 'androidx.room:room-runtime:2.2.5'
     annotationProcessor 'androidx.room:room-compiler:2.2.5'
+    api project(':libraryModule')
+    implementation project(':pureModule')
 }
 
 // Apply the PESDKPlugin
