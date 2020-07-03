@@ -12,20 +12,41 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.MenuItemCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.simplemobiletools.commons.extensions.*
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beGoneIf
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.deleteFiles
+import com.simplemobiletools.commons.extensions.getTimeFormat
+import com.simplemobiletools.commons.extensions.isMediaFile
+import com.simplemobiletools.commons.extensions.isVideoFast
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.toast
 import com.simplemobiletools.commons.helpers.ensureBackgroundThread
 import com.simplemobiletools.commons.models.FileDirItem
 import com.simplemobiletools.commons.views.MyGridLayoutManager
 import com.simplemobiletools.gallery.pro.R
 import com.simplemobiletools.gallery.pro.adapters.MediaAdapter
 import com.simplemobiletools.gallery.pro.asynctasks.GetMediaAsynctask
-import com.simplemobiletools.gallery.pro.extensions.*
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.deleteDBPath
+import com.simplemobiletools.gallery.pro.extensions.getCachedMedia
+import com.simplemobiletools.gallery.pro.extensions.movePathsInRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.openPath
+import com.simplemobiletools.gallery.pro.extensions.recycleBinPath
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_NONE
+import com.simplemobiletools.gallery.pro.helpers.MediaFetcher
+import com.simplemobiletools.gallery.pro.helpers.PATH
+import com.simplemobiletools.gallery.pro.helpers.SHOW_ALL
+import com.simplemobiletools.gallery.pro.helpers.VIEW_TYPE_GRID
 import com.simplemobiletools.gallery.pro.interfaces.MediaOperationsListener
 import com.simplemobiletools.gallery.pro.models.Medium
 import com.simplemobiletools.gallery.pro.models.ThumbnailItem
 import com.simplemobiletools.gallery.pro.models.ThumbnailSection
-import kotlinx.android.synthetic.main.activity_search.*
+import kotlinx.android.synthetic.main.activity_search.media_empty_text_placeholder
+import kotlinx.android.synthetic.main.activity_search.media_grid
+import kotlinx.android.synthetic.main.activity_search.media_horizontal_fastscroller
+import kotlinx.android.synthetic.main.activity_search.media_vertical_fastscroller
 import java.io.File
 
 class SearchActivity : SimpleActivity(), MediaOperationsListener {
@@ -47,11 +68,6 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
         getAllMedia()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mCurrAsyncTask?.stopFetching()
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_search, menu)
         setupSearch(menu)
@@ -62,7 +78,7 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.toggle_filename -> toggleFilenameVisibility()
-            else -> return super.onOptionsItemSelected(item)
+            else                 -> return super.onOptionsItemSelected(item)
         }
         return true
     }
@@ -260,7 +276,8 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
         val pathToCheck = SHOW_ALL
         val hasSections = config.getFolderGrouping(pathToCheck) and GROUP_BY_NONE == 0 && !config.scrollHorizontally
         val sectionTitleHeight = if (hasSections) layoutManager.getChildAt(0)?.height ?: 0 else 0
-        val thumbnailHeight = if (hasSections) layoutManager.getChildAt(1)?.height ?: 0 else layoutManager.getChildAt(0)?.height ?: 0
+        val thumbnailHeight = if (hasSections) layoutManager.getChildAt(1)?.height
+            ?: 0 else layoutManager.getChildAt(0)?.height ?: 0
 
         var fullHeight = 0
         var curSectionItems = 0
@@ -285,7 +302,7 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
     private fun getAllMedia() {
         getCachedMedia("") {
             if (it.isNotEmpty()) {
-                mAllMedia = it.clone() as ArrayList<ThumbnailItem>
+                mAllMedia = it
             }
             runOnUiThread {
                 setupAdapter()
@@ -295,9 +312,8 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
     }
 
     private fun startAsyncTask(updateItems: Boolean) {
-        mCurrAsyncTask?.stopFetching()
         mCurrAsyncTask = GetMediaAsynctask(applicationContext, "", showAll = true) {
-            mAllMedia = it.clone() as ArrayList<ThumbnailItem>
+            mAllMedia = it
             if (updateItems) {
                 textChanged(mLastSearchedText)
             }

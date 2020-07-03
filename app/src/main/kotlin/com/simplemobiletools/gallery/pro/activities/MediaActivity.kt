@@ -23,7 +23,28 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.simplemobiletools.commons.dialogs.CreateNewFolderDialog
-import com.simplemobiletools.commons.extensions.*
+import com.simplemobiletools.commons.extensions.beGone
+import com.simplemobiletools.commons.extensions.beGoneIf
+import com.simplemobiletools.commons.extensions.beVisible
+import com.simplemobiletools.commons.extensions.beVisibleIf
+import com.simplemobiletools.commons.extensions.deleteFiles
+import com.simplemobiletools.commons.extensions.getAdjustedPrimaryColor
+import com.simplemobiletools.commons.extensions.getDoesFilePathExist
+import com.simplemobiletools.commons.extensions.getFilenameFromPath
+import com.simplemobiletools.commons.extensions.getIsPathDirectory
+import com.simplemobiletools.commons.extensions.getLatestMediaByDateId
+import com.simplemobiletools.commons.extensions.getLatestMediaId
+import com.simplemobiletools.commons.extensions.getTimeFormat
+import com.simplemobiletools.commons.extensions.handleHiddenFolderPasswordProtection
+import com.simplemobiletools.commons.extensions.handleLockedFolderOpening
+import com.simplemobiletools.commons.extensions.isGone
+import com.simplemobiletools.commons.extensions.isMediaFile
+import com.simplemobiletools.commons.extensions.isVideoFast
+import com.simplemobiletools.commons.extensions.isVisible
+import com.simplemobiletools.commons.extensions.onGlobalLayout
+import com.simplemobiletools.commons.extensions.showErrorToast
+import com.simplemobiletools.commons.extensions.toast
+import com.simplemobiletools.commons.extensions.updateActionBarTitle
 import com.simplemobiletools.commons.helpers.PERMISSION_WRITE_STORAGE
 import com.simplemobiletools.commons.helpers.REQUEST_EDIT_IMAGE
 import com.simplemobiletools.commons.helpers.SORT_BY_RANDOM
@@ -39,16 +60,58 @@ import com.simplemobiletools.gallery.pro.dialogs.ChangeGroupingDialog
 import com.simplemobiletools.gallery.pro.dialogs.ChangeSortingDialog
 import com.simplemobiletools.gallery.pro.dialogs.ChangeViewTypeDialog
 import com.simplemobiletools.gallery.pro.dialogs.FilterMediaDialog
-import com.simplemobiletools.gallery.pro.extensions.*
-import com.simplemobiletools.gallery.pro.helpers.*
+import com.simplemobiletools.gallery.pro.extensions.config
+import com.simplemobiletools.gallery.pro.extensions.deleteDBPath
+import com.simplemobiletools.gallery.pro.extensions.directoryDao
+import com.simplemobiletools.gallery.pro.extensions.emptyAndDisableTheRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.emptyTheRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.getCachedMedia
+import com.simplemobiletools.gallery.pro.extensions.getHumanizedFilename
+import com.simplemobiletools.gallery.pro.extensions.isDownloadsFolder
+import com.simplemobiletools.gallery.pro.extensions.launchAbout
+import com.simplemobiletools.gallery.pro.extensions.launchCamera
+import com.simplemobiletools.gallery.pro.extensions.launchSettings
+import com.simplemobiletools.gallery.pro.extensions.mediaDB
+import com.simplemobiletools.gallery.pro.extensions.movePathsInRecycleBin
+import com.simplemobiletools.gallery.pro.extensions.openPath
+import com.simplemobiletools.gallery.pro.extensions.recycleBinPath
+import com.simplemobiletools.gallery.pro.extensions.restoreRecycleBinPaths
+import com.simplemobiletools.gallery.pro.extensions.showRecycleBinEmptyingDialog
+import com.simplemobiletools.gallery.pro.extensions.tryDeleteFileDirItem
+import com.simplemobiletools.gallery.pro.extensions.updateWidgets
+import com.simplemobiletools.gallery.pro.helpers.DIRECTORY
+import com.simplemobiletools.gallery.pro.helpers.FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.GET_ANY_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GET_IMAGE_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GET_VIDEO_INTENT
+import com.simplemobiletools.gallery.pro.helpers.GROUP_BY_NONE
+import com.simplemobiletools.gallery.pro.helpers.MAX_COLUMN_COUNT
+import com.simplemobiletools.gallery.pro.helpers.MediaFetcher
+import com.simplemobiletools.gallery.pro.helpers.PATH
+import com.simplemobiletools.gallery.pro.helpers.PICKED_PATHS
+import com.simplemobiletools.gallery.pro.helpers.RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.SET_WALLPAPER_INTENT
+import com.simplemobiletools.gallery.pro.helpers.SHOW_ALL
+import com.simplemobiletools.gallery.pro.helpers.SHOW_FAVORITES
+import com.simplemobiletools.gallery.pro.helpers.SHOW_RECYCLE_BIN
+import com.simplemobiletools.gallery.pro.helpers.SHOW_TEMP_HIDDEN_DURATION
+import com.simplemobiletools.gallery.pro.helpers.SKIP_AUTHENTICATION
+import com.simplemobiletools.gallery.pro.helpers.SLIDESHOW_START_ON_ENTER
+import com.simplemobiletools.gallery.pro.helpers.VIEW_TYPE_GRID
 import com.simplemobiletools.gallery.pro.interfaces.MediaOperationsListener
 import com.simplemobiletools.gallery.pro.models.Medium
 import com.simplemobiletools.gallery.pro.models.ThumbnailItem
 import com.simplemobiletools.gallery.pro.models.ThumbnailSection
-import kotlinx.android.synthetic.main.activity_media.*
+import kotlinx.android.synthetic.main.activity_media.media_empty_text_placeholder
+import kotlinx.android.synthetic.main.activity_media.media_empty_text_placeholder_2
+import kotlinx.android.synthetic.main.activity_media.media_grid
+import kotlinx.android.synthetic.main.activity_media.media_horizontal_fastscroller
+import kotlinx.android.synthetic.main.activity_media.media_refresh_layout
+import kotlinx.android.synthetic.main.activity_media.media_vertical_fastscroller
 import java.io.File
 import java.io.IOException
-import java.util.*
+import java.util.ArrayList
+import java.util.HashMap
 
 class MediaActivity : SimpleActivity(), MediaOperationsListener {
     private val LAST_MEDIA_CHECK_PERIOD = 3000L
@@ -69,7 +132,6 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
     private var mLatestMediaDateId = 0L
     private var mLastMediaHandler = Handler()
     private var mTempShowHiddenHandler = Handler()
-    private var mCurrAsyncTask: GetMediaAsynctask? = null
     private var mZoomListener: MyRecyclerView.MyZoomListener? = null
     private var mSearchMenuItem: MenuItem? = null
 
@@ -187,10 +249,6 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
         media_refresh_layout.isRefreshing = false
         storeStateVariables()
         mLastMediaHandler.removeCallbacksAndMessages(null)
-
-        if (!mMedia.isEmpty()) {
-            mCurrAsyncTask?.stopFetching()
-        }
     }
 
     override fun onStop() {
@@ -250,25 +308,25 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.sort -> showSortingDialog()
-            R.id.filter -> showFilterMediaDialog()
-            R.id.empty_recycle_bin -> emptyRecycleBin()
+            R.id.sort                      -> showSortingDialog()
+            R.id.filter                    -> showFilterMediaDialog()
+            R.id.empty_recycle_bin         -> emptyRecycleBin()
             R.id.empty_disable_recycle_bin -> emptyAndDisableRecycleBin()
-            R.id.restore_all_files -> restoreAllFiles()
-            R.id.toggle_filename -> toggleFilenameVisibility()
-            R.id.open_camera -> launchCamera()
-            R.id.folder_view -> switchToFolderView()
-            R.id.change_view_type -> changeViewType()
-            R.id.group -> showGroupByDialog()
-            R.id.create_new_folder -> createNewFolder()
-            R.id.temporarily_show_hidden -> tryToggleTemporarilyShowHidden()
-            R.id.stop_showing_hidden -> tryToggleTemporarilyShowHidden()
-            R.id.increase_column_count -> increaseColumnCount()
-            R.id.reduce_column_count -> reduceColumnCount()
-            R.id.slideshow -> startSlideshow()
-            R.id.settings -> launchSettings()
-            R.id.about -> launchAbout()
-            else -> return super.onOptionsItemSelected(item)
+            R.id.restore_all_files         -> restoreAllFiles()
+            R.id.toggle_filename           -> toggleFilenameVisibility()
+            R.id.open_camera               -> launchCamera()
+            R.id.folder_view               -> switchToFolderView()
+            R.id.change_view_type          -> changeViewType()
+            R.id.group                     -> showGroupByDialog()
+            R.id.create_new_folder         -> createNewFolder()
+            R.id.temporarily_show_hidden   -> tryToggleTemporarilyShowHidden()
+            R.id.stop_showing_hidden       -> tryToggleTemporarilyShowHidden()
+            R.id.increase_column_count     -> increaseColumnCount()
+            R.id.reduce_column_count       -> reduceColumnCount()
+            R.id.slideshow                 -> startSlideshow()
+            R.id.settings                  -> launchSettings()
+            R.id.about                     -> launchAbout()
+            else                           -> return super.onOptionsItemSelected(item)
         }
         return true
     }
@@ -364,10 +422,10 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
         handlePermission(PERMISSION_WRITE_STORAGE) {
             if (it) {
                 val dirName = when {
-                    mPath == FAVORITES -> getString(R.string.favorites)
-                    mPath == RECYCLE_BIN -> getString(R.string.recycle_bin)
+                    mPath == FAVORITES      -> getString(R.string.favorites)
+                    mPath == RECYCLE_BIN    -> getString(R.string.recycle_bin)
                     mPath == config.OTGPath -> getString(R.string.usb)
-                    else -> getHumanizedFilename(mPath)
+                    else                    -> getHumanizedFilename(mPath)
                 }
                 updateActionBarTitle(if (mShowAll) resources.getString(R.string.all_folders) else dirName)
                 getMedia()
@@ -567,22 +625,17 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
     }
 
     private fun startAsyncTask() {
-        mCurrAsyncTask?.stopFetching()
-        mCurrAsyncTask = GetMediaAsynctask(applicationContext, mPath, mIsGetImageIntent, mIsGetVideoIntent, mShowAll) {
-            ensureBackgroundThread {
-                val oldMedia = mMedia.clone() as ArrayList<ThumbnailItem>
-                val newMedia = it
-                try {
-                    gotMedia(newMedia, false)
-                    oldMedia.filter { !newMedia.contains(it) }.mapNotNull { it as? Medium }.filter { !getDoesFilePathExist(it.path) }.forEach {
-                        mediaDB.deleteMediumPath(it.path)
-                    }
-                } catch (e: Exception) {
+       GetMediaAsynctask(applicationContext, mPath, mIsGetImageIntent, mIsGetVideoIntent, mShowAll) {
+            val oldMedia = mMedia.clone() as ArrayList<ThumbnailItem>
+            val newMedia = it
+            try {
+                gotMedia(newMedia, false)
+                oldMedia.filter { !newMedia.contains(it) }.mapNotNull { it as? Medium }.filter { !getDoesFilePathExist(it.path) }.forEach {
+                    mediaDB.deleteMediumPath(it.path)
                 }
+            } catch (e: Exception) {
             }
-        }
-
-        mCurrAsyncTask!!.execute()
+        }.execute()
     }
 
     private fun isDirEmpty(): Boolean {
@@ -697,7 +750,8 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
         val pathToCheck = if (mPath.isEmpty()) SHOW_ALL else mPath
         val hasSections = config.getFolderGrouping(pathToCheck) and GROUP_BY_NONE == 0 && !config.scrollHorizontally
         val sectionTitleHeight = if (hasSections) layoutManager.getChildAt(0)?.height ?: 0 else 0
-        val thumbnailHeight = if (hasSections) layoutManager.getChildAt(1)?.height ?: 0 else layoutManager.getChildAt(0)?.height ?: 0
+        val thumbnailHeight = if (hasSections) layoutManager.getChildAt(1)?.height
+            ?: 0 else layoutManager.getChildAt(0)?.height ?: 0
 
         var fullHeight = 0
         var curSectionItems = 0
