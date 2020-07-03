@@ -6,7 +6,7 @@
     android:installLocation="auto">
 
     <application
-        android:name=".App">
+        android:name=".helpers.ZoomTransformation">
 
         <activity
             android:name=".activities.EditActivity">
